@@ -59,6 +59,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String login(String username, String password) {
+        // 先查询用户状态
+        User user = userService.getUserByUsername(username);
+        if (user != null && user.getStatus() == 0) {
+            throw new org.springframework.security.authentication.DisabledException("您的账号正在审核中，请等待管理员审核通过后再尝试登录");
+        }
+
         // 认证用户
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(username, password));
@@ -70,8 +76,7 @@ public class AuthServiceImpl implements AuthService {
         String jwt = tokenProvider.generateToken(authentication);
 
         // 更新用户最后登录时间
-        User user = userService.getUserByUsername(username);
-        userService.updateLastLoginTime(user.getId());
+        userService.updateLastLoginTime(user != null ? user.getId() : userService.getUserByUsername(username).getId());
 
         return jwt;
     }

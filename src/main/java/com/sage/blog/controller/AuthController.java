@@ -40,14 +40,28 @@ public class AuthController {
      */
     @PostMapping("/login")
     public Result<JwtAuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        String token = authService.login(loginRequest.getUsername(), loginRequest.getPassword());
+        try {
+            String token = authService.login(loginRequest.getUsername(), loginRequest.getPassword());
 
-        // 获取用户信息
-        User user = userService.getUserByUsername(loginRequest.getUsername());
-        // 移除敏感信息
-        user.setPassword(null);
+            // 获取用户信息
+            User user = userService.getUserByUsername(loginRequest.getUsername());
+            // 移除敏感信息
+            user.setPassword(null);
 
-        return Result.success(new JwtAuthResponse(token, user));
+            return Result.success(new JwtAuthResponse(token, user));
+        } catch (org.springframework.security.authentication.DisabledException e) {
+            // 处理账号待审核的情况
+            return Result.failed(e.getMessage());
+        } catch (org.springframework.security.authentication.BadCredentialsException e) {
+            // 处理用户名或密码错误的情况
+            return Result.failed("用户名或密码错误");
+        } catch (org.springframework.security.authentication.LockedException e) {
+            // 处理账号被锁定的情况
+            return Result.failed("您的账号已被锁定，请联系管理员");
+        } catch (Exception e) {
+            logger.error("用户登录异常", e);
+            return Result.failed("登录失败，请稍后再试");
+        }
     }
 
     /**
