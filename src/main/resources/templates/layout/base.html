@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} ?: 'SageBlog'">SageBlog</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <!-- 自定义样式块 -->
+    <th:block th:replace="${styles}"></th:block>
+</head>
+
+<body>
+    <!-- 导航栏 -->
+    <header th:replace="~{layout/header :: header}"></header>
+
+    <!-- 主要内容 -->
+    <main>
+        <div th:if="${message}" class="container mt-4">
+            <div class="alert" th:classappend="${messageType} ?: 'alert-info'" role="alert">
+                <span th:text="${message}">消息提示</span>
+            </div>
+        </div>
+
+        <!-- 主要内容区域 -->
+        <div th:replace="${content}">
+            页面内容将在这里显示
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer th:replace="~{layout/footer :: footer}"></footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- 自定义脚本块 -->
+    <th:block th:replace="${scripts}"></th:block>
+</body>
+
+</html>

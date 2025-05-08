@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页 - SageBlog</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引用外部样式 -->
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+
+    <style>
+        .banner {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 5rem 0;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .banner h1 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card {
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 2rem;
+            height: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: #6a11cb;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="fas fa-book-reader me-2"></i>SageBlog
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/}">
+                            <i class="fas fa-home me-1"></i>首页
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/blog}">
+                            <i class="fas fa-blog me-1"></i>博客
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/about}">
+                            <i class="fas fa-info-circle me-1"></i>关于
+                        </a>
+                    </li>
+                </ul>
+                <!-- 未登录状态 -->
+                <ul class="navbar-nav auth-not-logged-in" style="display: none;">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/login}">
+                            <i class="fas fa-sign-in-alt me-1"></i>登录
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/register}">
+                            <i class="fas fa-user-plus me-1"></i>注册
+                        </a>
+                    </li>
+                </ul>
+                <!-- 已登录状态 -->
+                <ul class="navbar-nav auth-logged-in" style="display: none;">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i><span id="currentUsername">用户</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" th:href="@{/profile}">
+                                    <i class="fas fa-user me-2"></i>个人信息
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" th:href="@{/dashboard}">
+                                    <i class="fas fa-tachometer-alt me-2"></i>控制面板
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="javascript:void(0);" id="logoutBtn">
+                                    <i class="fas fa-sign-out-alt me-2"></i>退出登录
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 横幅 -->
+    <section class="banner">
+        <div class="container">
+            <h1>欢迎来到 SageBlog</h1>
+            <p class="lead mb-4">一个安全、高效的用户管理系统，轻松管理您的用户和权限</p>
+            <div>
+                <a th:href="@{/register}" class="btn btn-light btn-lg me-2 auth-not-logged-in"
+                    style="display: none;">立即注册</a>
+                <a th:href="@{/login}" class="btn btn-outline-light btn-lg auth-not-logged-in"
+                    style="display: none;">用户登录</a>
+                <a th:href="@{/dashboard}" class="btn btn-light btn-lg auth-logged-in" style="display: none;">进入控制面板</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 特点介绍 -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">主要功能</h2>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card feature-card p-4">
+                        <div class="card-body text-center">
+                            <div class="feature-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h3 class="card-title h4">安全认证</h3>
+                            <p class="card-text">基于 Spring Security 和 JWT 的强大认证系统，保障您的账户安全</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card p-4">
+                        <div class="card-body text-center">
+                            <div class="feature-icon">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <h3 class="card-title h4">用户审核</h3>
+                            <p class="card-text">严格的用户注册审核机制，确保平台用户的真实性和可靠性</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card p-4">
+                        <div class="card-body text-center">
+                            <div class="feature-icon">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <h3 class="card-title h4">权限控制</h3>
+                            <p class="card-text">基于RBAC的精细化权限控制模型，为不同角色分配恰当的系统权限</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 主要内容 -->
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h1 class="display-4">欢迎来到 SageBlog</h1>
+                <p class="lead">一个简单而功能强大的博客系统</p>
+                <div id="loginStatus" class="mt-3 alert alert-info" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-pencil-alt fa-3x mb-3 text-primary"></i>
+                        <h3 class="card-title">创作博客</h3>
+                        <p class="card-text">轻松创作和发布您的博客文章，分享您的想法和经验。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-3x mb-3 text-primary"></i>
+                        <h3 class="card-title">社区互动</h3>
+                        <p class="card-text">与其他博主和读者交流互动，建立您的专业网络。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-line fa-3x mb-3 text-primary"></i>
+                        <h3 class="card-title">数据分析</h3>
+                        <p class="card-text">跟踪您的博客表现，了解读者喜好和阅读趋势。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <h2>立即开始</h2>
+                <p>加入我们，开始您的博客之旅</p>
+                <div class="mt-4">
+                    <a href="/register" class="btn btn-primary me-2 auth-not-logged-in" style="display: none;">
+                        <i class="fas fa-user-plus me-2"></i>注册
+                    </a>
+                    <a href="/login" class="btn btn-outline-primary auth-not-logged-in" style="display: none;">
+                        <i class="fas fa-sign-in-alt me-2"></i>登录
+                    </a>
+                    <a href="/dashboard" class="btn btn-success auth-logged-in" style="display: none;">
+                        <i class="fas fa-tachometer-alt me-2"></i>进入控制面板
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>SageBlog</h5>
+                    <p>一个简单而功能强大的博客系统</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>链接</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white">首页</a></li>
+                        <li><a href="#" class="text-white">博客</a></li>
+                        <li><a href="#" class="text-white">关于</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>联系我们</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white">
+                                <i class="fab fa-github me-2"></i>GitHub
+                            </a></li>
+                        <li><a href="#" class="text-white">
+                                <i class="fas fa-envelope me-2"></i>邮箱
+                            </a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12 text-center">
+                    <p class="mb-0">© 2023 SageBlog. 保留所有权利。</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script th:src="@{/js/auth.js}"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const contextPath = /*[[@{/}]]*/ '';
+        console.log('[首页] 应用上下文路径:', contextPath);
+
+        // 确保所有链接都使用正确的上下文路径
+        function fixUrls() {
+            // 修复注册、登录和控制面板按钮的链接
+            $('a[href="/register"]').attr('href', contextPath + 'register');
+            $('a[href="/login"]').attr('href', contextPath + 'login');
+            $('a[href="/dashboard"]').attr('href', contextPath + 'dashboard');
+            $('a[href="/profile"]').attr('href', contextPath + 'profile');
+        }
+
+        // 检查登录状态并更新界面
+        function updateAuthUI() {
+            console.log('[首页] 检查登录状态...');
+
+            try {
+                const isLoggedIn = AuthUtil.isLoggedIn();
+                console.log('[首页] 登录状态:', isLoggedIn);
+
+                if (isLoggedIn) {
+                    // 已登录状态
+                    $('.auth-logged-in').show();
+                    $('.auth-not-logged-in').hide();
+
+                    // 获取并显示用户信息
+                    const user = AuthUtil.getCurrentUser();
+                    console.log('[首页] 当前用户:', user);
+
+                    if (user) {
+                        // 设置用户名
+                        const displayName = user.nickname || user.username || '用户';
+                        $('#currentUsername').text(displayName);
+
+                        // 显示登录状态
+                        $('#loginStatus').html(`
+                            <strong>已登录!</strong> 欢迎回来，${displayName}。
+                            <button class="btn btn-sm btn-outline-danger ms-3" id="logoutBtnStatus">退出登录</button>
+                        `).show();
+                    } else {
+                        console.warn('[首页] 已登录但获取不到用户信息');
+                        $('#loginStatus').html(`
+                            <strong>已登录!</strong> 但无法获取您的用户信息。
+                            <button class="btn btn-sm btn-outline-danger ms-3" id="logoutBtnStatus">退出登录</button>
+                        `).show();
+                    }
+                } else {
+                    // 未登录状态
+                    $('.auth-logged-in').hide();
+                    $('.auth-not-logged-in').show();
+
+                    // 显示登录状态
+                    $('#loginStatus').html(`
+                        <strong>未登录</strong> 请
+                        <a href="${contextPath}login" class="alert-link">登录</a>
+                        或
+                        <a href="${contextPath}register" class="alert-link">注册</a>
+                        以获取完整功能。
+                    `).show();
+                }
+            } catch (error) {
+                console.error('[首页] 检查登录状态出错:', error);
+                // 出错时默认显示未登录状态
+                $('.auth-logged-in').hide();
+                $('.auth-not-logged-in').show();
+
+                $('#loginStatus').html(`
+                    <strong>检查登录状态出错</strong> 请刷新页面或
+                    <a href="${contextPath}login" class="alert-link">重新登录</a>。
+                `).removeClass('alert-info').addClass('alert-warning').show();
+            }
+        }
+
+        $(document).ready(function () {
+            console.log('[首页] 页面已加载');
+
+            // 修复URL
+            fixUrls();
+
+            // 初始化界面
+            updateAuthUI();
+
+            // 注册退出登录事件
+            $(document).on('click', '#logoutBtn, #logoutBtnStatus', function () {
+                console.log('[首页] 用户点击退出登录');
+                AuthUtil.logout();
+                return false; // 阻止默认行为
+            });
+        });
+        /*]]>*/
+    </script>
+</body>
+
+</html>

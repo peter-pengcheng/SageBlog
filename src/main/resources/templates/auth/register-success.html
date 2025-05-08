@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <th:block th:fragment="styles">
+        <style>
+            .success-container {
+                max-width: 600px;
+                margin: 2rem auto;
+                padding: 2rem;
+                border-radius: 10px;
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+                text-align: center;
+            }
+
+            .success-header {
+                margin-bottom: 2rem;
+            }
+
+            .success-header h1 {
+                font-size: 2rem;
+                color: #2ecc71;
+            }
+
+            .success-icon {
+                font-size: 5rem;
+                color: #2ecc71;
+                margin-bottom: 1rem;
+            }
+
+            .success-body {
+                margin-bottom: 2rem;
+            }
+
+            .success-footer {
+                margin-top: 2rem;
+            }
+
+            .btn-home {
+                background-color: #3498db;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 5px;
+                text-decoration: none;
+            }
+        </style>
+    </th:block>
+</head>
+
+<body>
+    <div th:fragment="content">
+        <div class="success-container">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+
+            <div class="success-header">
+                <h1>注册成功！</h1>
+            </div>
+
+            <div class="success-body">
+                <p>感谢您注册SageBlog！</p>
+                <p>您的账号正在等待管理员审核。审核通过后，您将收到一封确认邮件，之后即可登录使用。</p>
+                <p>请耐心等待，审核通常在1-2个工作日内完成。</p>
+            </div>
+
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                我们已向您的邮箱发送了一封确认邮件，请查收。
+            </div>
+
+            <div class="success-footer">
+                <a th:href="@{/}" class="btn btn-home">返回首页</a>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

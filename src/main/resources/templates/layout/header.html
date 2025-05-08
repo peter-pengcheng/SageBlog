@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<body>
+    <header th:fragment="header">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center" th:href="@{/}">
+                    <i class="fas fa-book-reader me-2"></i>
+                    <span>SageBlog</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/}"
+                                th:classappend="${#httpServletRequest.requestURI == '/' ? 'active' : ''}">
+                                <i class="fas fa-home me-1"></i>首页
+                            </a>
+                        </li>
+
+                        <!-- 用户已登录才显示 -->
+                        <li class="nav-item" sec:authorize="isAuthenticated()">
+                            <a class="nav-link" th:href="@{/dashboard}"
+                                th:classappend="${#httpServletRequest.requestURI == '/dashboard' ? 'active' : ''}">
+                                <i class="fas fa-tachometer-alt me-1"></i>控制面板
+                            </a>
+                        </li>
+
+                        <!-- 管理员才显示 -->
+                        <li class="nav-item" sec:authorize="hasAuthority('system:user:list')">
+                            <a class="nav-link" th:href="@{/admin}"
+                                th:classappend="${#httpServletRequest.requestURI == '/admin' ? 'active' : ''}">
+                                <i class="fas fa-shield-alt me-1"></i>管理后台
+                            </a>
+                        </li>
+                    </ul>
+
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        <!-- 未登录显示 -->
+                        <li class="nav-item" sec:authorize="!isAuthenticated()">
+                            <a class="nav-link btn-nav" th:href="@{/login}"
+                                th:classappend="${#httpServletRequest.requestURI == '/login' ? 'active' : ''}">
+                                <i class="fas fa-sign-in-alt me-1"></i>登录
+                            </a>
+                        </li>
+                        <li class="nav-item" sec:authorize="!isAuthenticated()">
+                            <a class="nav-link btn-nav-primary ms-lg-2" th:href="@{/register}"
+                                th:classappend="${#httpServletRequest.requestURI == '/register' ? 'active' : ''}">
+                                <i class="fas fa-user-plus me-1"></i>注册
+                            </a>
+                        </li>
+
+                        <!-- 已登录显示 -->
+                        <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown"
+                                role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <img id="navbarAvatar" class="rounded-circle me-2" width="30" height="30"
+                                    src="/sageblog/resources/avatars/default-avatar.jpg" alt="用户头像">
+                                <span sec:authentication="name">用户名</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 overflow-hidden"
+                                aria-labelledby="navbarDropdown">
+                                <li class="dropdown-header text-center">
+                                    <div class="text-center mb-2">
+                                        <img id="dropdownAvatar" class="rounded-circle mb-2" width="60" height="60"
+                                            src="/sageblog/resources/avatars/default-avatar.jpg" alt="用户头像">
+                                        <h6 class="mb-0" sec:authentication="name">用户名</h6>
+                                        <small class="text-muted">用户角色</small>
+                                    </div>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2" th:href="@{/profile}">
+                                        <i class="fas fa-user me-2"></i>个人资料
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2" th:href="@{/settings}">
+                                        <i class="fas fa-cog me-2"></i>设置
+                                    </a>
+                                </li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <form th:action="@{/logout}" method="post" class="dropdown-item p-0">
+                                        <button type="submit"
+                                            class="btn btn-link text-decoration-none w-100 text-start px-3 py-2">
+                                            <i class="fas fa-sign-out-alt me-2"></i>退出登录
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+</body>
+
+</html>

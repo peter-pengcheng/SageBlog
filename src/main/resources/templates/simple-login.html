@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - SageBlog</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引用外部样式 -->
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+
+    <style>
+        .login-container {
+            max-width: 420px;
+            margin: 5rem auto;
+            padding: 2.5rem;
+            border-radius: 10px;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            transition: transform 0.3s ease;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .login-icon {
+            margin-bottom: 1.5rem;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .remember-me {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">
+                <i class="fas fa-book-reader me-2"></i>SageBlog
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}">
+                            <i class="fas fa-home me-1"></i>首页
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" th:href="@{/login}">
+                            <i class="fas fa-sign-in-alt me-1"></i>登录
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/register}">
+                            <i class="fas fa-user-plus me-1"></i>注册
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main>
+        <div class="login-container">
+            <div class="login-header">
+                <div class="login-icon">
+                    <i class="fas fa-user-circle fa-4x text-primary"></i>
+                </div>
+                <h1 class="h3 mb-3">欢迎回来</h1>
+                <p class="text-muted">请登录您的 SageBlog 账号</p>
+            </div>
+
+            <!-- 登录表单 -->
+            <form id="loginForm">
+                <!-- 错误消息 -->
+                <div id="login-error" class="alert alert-danger mb-4" style="display: none;">
+                    <i class="fas fa-exclamation-circle me-2"></i><span id="error-message">登录失败</span>
+                </div>
+
+                <div class="mb-3">
+                    <label for="username" class="form-label">用户名</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名"
+                            required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">密码</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码"
+                            required>
+                    </div>
+                </div>
+
+                <div class="mb-4 remember-me">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
+                        <label class="form-check-label" for="rememberMe">记住我</label>
+                    </div>
+                    <div>
+                        <a th:href="@{/forgot-password}" class="text-decoration-none small">忘记密码?</a>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt me-2"></i>登录
+                    </button>
+                </div>
+            </form>
+
+            <div class="login-footer">
+                <div>
+                    没有账号?
+                    <a th:href="@{/register}" class="text-decoration-none">
+                        <i class="fas fa-user-plus me-1"></i>立即注册
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-4 mt-auto">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                    <p class="mb-0">&copy; 2023 SageBlog. 保留所有权利。</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <a href="#" class="text-white me-3">隐私政策</a>
+                    <a href="#" class="text-white">服务条款</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- 认证工具 -->
+    <script th:src="@{/js/auth.js}"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // 获取应用上下文路径
+        const contextPath = /*[[@{/}]]*/ '';
+        console.log('[登录页] 应用上下文路径:', contextPath);
+
+        $(document).ready(function () {
+            console.log('[登录页] 页面已加载，准备初始化');
+
+            // 检查后端错误信息
+            const errorParam = new URLSearchParams(window.location.search).get('error');
+            if (errorParam) {
+                console.log('[登录页] URL中包含错误参数:', errorParam);
+                $('#error-message').text(decodeURIComponent(errorParam));
+                $('#login-error').show();
+            }
+
+            // 如果已登录，跳转到首页
+            if (AuthUtil.isLoggedIn()) {
+                console.log('[登录页] 用户已登录，正在跳转到首页');
+                window.location.href = contextPath;
+                return;
+            }
+
+            // 表单提交
+            $('#loginForm').submit(function (e) {
+                e.preventDefault();
+                console.log('[登录页] 登录表单已提交');
+
+                // 隐藏之前的错误信息
+                $('#login-error').hide();
+
+                // 获取表单数据
+                const username = $('#username').val();
+                const password = $('#password').val();
+
+                // 表单验证
+                if (!username || !password) {
+                    console.log('[登录页] 表单验证失败');
+                    $('#error-message').text('用户名和密码不能为空');
+                    $('#login-error').show();
+                    return;
+                }
+
+                console.log('[登录页] 表单验证通过，准备发送请求');
+
+                // 构建登录数据
+                const loginData = {
+                    username: username,
+                    password: password
+                };
+
+                // 发送登录请求
+                console.log('[登录页] 发送登录请求到:', contextPath + 'api/auth/login');
+                $.ajax({
+                    url: contextPath + 'api/auth/login',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(loginData),
+                    success: function (response) {
+                        console.log('[登录页] 收到响应:', response);
+
+                        if (response.code === 200) {
+                            // 登录成功
+                            console.log('[登录页] 登录成功，保存令牌和用户信息');
+
+                            try {
+                                // 保存令牌 - 兼容两种令牌字段名
+                                const token = response.data.accessToken || response.data.token;
+                                if (!token) {
+                                    throw new Error('响应中没有找到有效的令牌');
+                                }
+
+                                console.log('[登录页] 获取到令牌:', token.substring(0, 10) + '...');
+                                AuthUtil.setToken(token);
+
+                                // 保存用户信息
+                                const user = response.data.user || {};
+                                console.log('[登录页] 获取到用户信息:', user);
+                                AuthUtil.setCurrentUser(user);
+
+                                // 获取重定向URL
+                                const redirectUrl = new URLSearchParams(window.location.search).get('redirect');
+                                const targetUrl = redirectUrl || contextPath;
+
+                                console.log('[登录页] 准备跳转到:', targetUrl);
+
+                                // 显示成功信息
+                                $('#login-error').removeClass('alert-danger').addClass('alert-success');
+                                $('#error-message').text('登录成功，正在跳转...');
+                                $('#login-error').show();
+
+                                // 使用延时确保数据保存完毕
+                                setTimeout(function () {
+                                    console.log('[登录页] 执行页面跳转...');
+                                    // 使用replace防止浏览器回退到登录页
+                                    window.location.replace(targetUrl);
+                                }, 500);
+                            } catch (e) {
+                                console.error('[登录页] 保存用户数据出错:', e);
+                                $('#error-message').text('登录成功但保存用户信息失败: ' + e.message);
+                                $('#login-error').show();
+                            }
+                        } else {
+                            // 登录失败
+                            console.error('[登录页] 登录失败:', response.message);
+                            $('#error-message').text(response.message || '登录失败，请稍后再试');
+                            $('#login-error').show();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('[登录页] 请求出错:', status, error);
+
+                        try {
+                            // 尝试解析错误响应
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            console.error('[登录页] 错误响应详情:', errorResponse);
+                            $('#error-message').text(errorResponse.message || '登录请求失败');
+                        } catch (e) {
+                            console.error('[登录页] 无法解析错误响应');
+                            $('#error-message').text('登录请求失败，请检查网络连接');
+                        }
+
+                        $('#login-error').show();
+                    }
+                });
+            });
+        });
+        /*]]>*/
+    </script>
+</body>
+
+</html>

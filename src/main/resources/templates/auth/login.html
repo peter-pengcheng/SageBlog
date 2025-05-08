@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <th:block th:fragment="styles">
+        <!-- 使用全局样式，不再需要内联样式 -->
+    </th:block>
+</head>
+
+<body>
+    <div th:fragment="content">
+        <div class="auth-container">
+            <div class="auth-header">
+                <div class="auth-icon">
+                    <i class="fas fa-user-circle fa-4x text-primary mb-3"></i>
+                </div>
+                <h1 class="h3 mb-3">欢迎回来</h1>
+                <p class="text-muted">请登录您的SageBlog账号</p>
+            </div>
+
+            <!-- 登录表单 -->
+            <form id="loginForm" th:action="@{/login}" method="post">
+                <!-- 登录错误消息 -->
+                <div th:if="${param.error}" class="alert alert-danger mb-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>用户名或密码不正确
+                </div>
+                <!-- 登出成功消息 -->
+                <div th:if="${param.logout}" class="alert alert-success mb-4">
+                    <i class="fas fa-check-circle me-2"></i>您已成功退出登录
+                </div>
+
+                <div class="mb-4">
+                    <label for="username" class="form-label">用户名</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名"
+                            required autofocus>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label">密码</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码"
+                            required>
+                    </div>
+                </div>
+
+                <div class="mb-4 form-check">
+                    <input type="checkbox" class="form-check-input" id="remember-me" name="remember-me">
+                    <label class="form-check-label" for="remember-me">记住我</label>
+                </div>
+
+                <div class="mb-4">
+                    <button type="submit" class="btn btn-primary w-100 py-2">
+                        <i class="fas fa-sign-in-alt me-2"></i>登录
+                    </button>
+                </div>
+
+                <div class="auth-footer">
+                    <p class="mb-2">忘记密码？<a th:href="@{/forgot-password}">点击找回</a></p>
+                    <p>还没有账号？<a th:href="@{/register}">立即注册</a></p>
+                </div>
+            </form>
+
+            <!-- JWT登录表单 -->
+            <form id="jwtLoginForm" style="display: none;">
+                <div class="mb-4">
+                    <label for="jwt-username" class="form-label">用户名</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <input type="text" class="form-control" id="jwt-username" name="username" placeholder="请输入用户名"
+                            required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="jwt-password" class="form-label">密码</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <input type="password" class="form-control" id="jwt-password" name="password"
+                            placeholder="请输入密码" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <button type="submit" class="btn btn-primary w-100 py-2">
+                        <i class="fas fa-key me-2"></i>获取JWT令牌
+                    </button>
+                </div>
+
+                <div class="auth-footer">
+                    <p class="mb-2">忘记密码？<a th:href="@{/forgot-password}">点击找回</a></p>
+                    <p>还没有账号？<a th:href="@{/register}">立即注册</a></p>
+                </div>
+            </form>
+
+            <div class="text-center mt-4">
+                <a href="#" id="toggleLoginType" class="btn btn-link text-decoration-none">
+                    <i class="fas fa-exchange-alt me-1"></i>
+                    <span id="toggleText">使用JWT登录</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <th:block th:fragment="scripts">
+        <script>
+            $(document).ready(function () {
+                // 切换登录方式
+                let jwtMode = false;
+                $('#toggleLoginType').click(function (e) {
+                    e.preventDefault();
+                    jwtMode = !jwtMode;
+                    if (jwtMode) {
+                        $('#loginForm').hide();
+                        $('#jwtLoginForm').show();
+                        $('#toggleText').text('使用表单登录');
+                    } else {
+                        $('#loginForm').show();
+                        $('#jwtLoginForm').hide();
+                        $('#toggleText').text('使用JWT登录');
+                    }
+                });
+
+                // JWT登录
+                $('#jwtLoginForm').submit(function (e) {
+                    e.preventDefault();
+
+                    // 构建请求数据
+                    const loginData = {
+                        username: $('#jwt-username').val(),
+                        password: $('#jwt-password').val()
+                    };
+
+                    // 显示加载状态
+                    const submitBtn = $(this).find('button[type="submit"]');
+                    const originalText = submitBtn.html();
+                    submitBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>处理中...');
+                    submitBtn.prop('disabled', true);
+
+                    // 发送登录请求
+                    $.ajax({
+                        url: '/sageblog/api/auth/login',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(loginData),
+                        success: function (response) {
+                            if (response.code === 200) {
+                                // 登录成功，保存令牌
+                                localStorage.setItem('token', response.data.token);
+
+                                // 显示成功消息
+                                showAlert('登录成功，正在跳转...', 'success');
+
+                                // 重定向到首页或之前的页面
+                                setTimeout(function () {
+                                    window.location.href = '/sageblog/';
+                                }, 1000);
+                            } else {
+                                // 登录失败
+                                showAlert('登录失败: ' + response.message, 'danger');
+                                // 恢复按钮状态
+                                submitBtn.html(originalText);
+                                submitBtn.prop('disabled', false);
+                            }
+                        },
+                        error: function (xhr) {
+                            // 恢复按钮状态
+                            submitBtn.html(originalText);
+                            submitBtn.prop('disabled', false);
+
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                showAlert('登录失败: ' + response.message, 'danger');
+                            } catch (e) {
+                                showAlert('登录失败，请稍后重试', 'danger');
+                            }
+                        }
+                    });
+                });
+
+                // 显示提示信息
+                function showAlert(message, type) {
+                    const alertHtml = `
+                        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                            ${message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+
+                    // 添加到表单前
+                    const form = jwtMode ? $('#jwtLoginForm') : $('#loginForm');
+                    form.find('.alert').remove(); // 移除现有提示
+                    form.prepend(alertHtml);
+
+                    // 5秒后自动关闭
+                    setTimeout(function () {
+                        form.find('.alert').alert('close');
+                    }, 5000);
+                }
+            });
+        </script>
+    </th:block>
+</body>
+
+</html>

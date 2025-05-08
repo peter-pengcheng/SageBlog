@@ -1,0 +1,83 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /sageblog
+
+spring:
+  application:
+    name: sageblog
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3307/sageblog?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: root
+    password: mysql
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    timeout: 10000
+  mail:
+    host: smtp.163.com
+    port: 465
+    username: sageblogmail@163.com
+    password: VTfpyzkiHXz9Fzpn
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            enable: true
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+    encoding: UTF-8
+    mode: HTML
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      enabled: true
+
+mybatis-plus:
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: com.sage.blog.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      id-type: auto
+
+# 自定义配置
+sageblog:
+  # 邮件相关配置
+  mail:
+    from: sageblogmail@163.com
+    admin-notification: true  # 是否开启管理员邮件通知
+  # 默认初始化
+  init:
+    admin:
+      username: admin
+      password: admin123
+      email: admin@example.com
+  # JWT相关配置
+  jwt:
+    secret: sageblog_secret_key_2023
+    expiration: 86400  # 24小时，单位：秒
+  # 密码重置相关配置
+  password-reset:
+    expiration: 24  # 24小时
+    url: http://localhost:8080/sageblog/reset-password
+  # 文件上传相关配置
+  file:
+    upload-dir: ./uploads
+    avatar-url-prefix: /sageblog/resources 

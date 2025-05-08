@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <footer th:fragment="footer" class="bg-dark text-white py-4 mt-auto">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5 class="mb-3 d-flex align-items-center">
+                        <i class="fas fa-book-reader me-2"></i>SageBlog
+                    </h5>
+                    <p class="mb-3">一个基于Spring Boot的用户管理系统，为您的应用程序提供强大的用户管理功能。</p>
+                    <div class="d-flex social-icons">
+                        <a href="#" class="text-white me-3" title="GitHub">
+                            <i class="fab fa-github fa-lg"></i>
+                        </a>
+                        <a href="#" class="text-white me-3" title="Twitter">
+                            <i class="fab fa-twitter fa-lg"></i>
+                        </a>
+                        <a href="#" class="text-white" title="LinkedIn">
+                            <i class="fab fa-linkedin fa-lg"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5 class="mb-3">快速链接</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a class="text-white d-flex align-items-center" th:href="@{/}">
+                                <i class="fas fa-chevron-right me-2"></i>首页
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a class="text-white d-flex align-items-center" th:href="@{/about}">
+                                <i class="fas fa-chevron-right me-2"></i>关于我们
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a class="text-white d-flex align-items-center" th:href="@{/features}">
+                                <i class="fas fa-chevron-right me-2"></i>功能特点
+                            </a>
+                        </li>
+                        <li>
+                            <a class="text-white d-flex align-items-center" th:href="@{/contact}">
+                                <i class="fas fa-chevron-right me-2"></i>联系我们
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="mb-3">联系我们</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2 d-flex align-items-center">
+                            <i class="fas fa-envelope me-2"></i>
+                            <span>support@sageblog.com</span>
+                        </li>
+                        <li class="mb-2 d-flex align-items-center">
+                            <i class="fas fa-phone me-2"></i>
+                            <span>(123) 456-7890</span>
+                        </li>
+                        <li class="d-flex align-items-center">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            <span>北京市海淀区中关村大街1号</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                    <p class="mb-0">&copy; 2023 SageBlog. 保留所有权利。</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <a class="text-white me-3" href="#">
+                        <span class="d-inline-flex align-items-center">
+                            <i class="fas fa-shield-alt me-1"></i>隐私政策
+                        </span>
+                    </a>
+                    <a class="text-white" href="#">
+                        <span class="d-inline-flex align-items-center">
+                            <i class="fas fa-file-contract me-1"></i>服务条款
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
