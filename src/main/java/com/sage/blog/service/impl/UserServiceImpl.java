@@ -161,21 +161,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 Files.createDirectories(uploadPath);
             }
 
-            // 生成文件名
+            // 生成文件名 - 使用更简短的UUID以提高效率
             String originalFilename = file.getOriginalFilename();
             String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            String newFilename = "avatar_" + userId + "_" + UUID.randomUUID().toString() + extension;
+            String newFilename = "avatar_" + userId + "_" + UUID.randomUUID().toString().substring(0, 8) + extension;
 
             // 保存文件
             Path filePath = Paths.get(uploadDir, newFilename);
-            Files.copy(file.getInputStream(), filePath);
+            Files.copy(file.getInputStream(), filePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
-            // 更新用户头像路径
-            String avatarUrl = "/uploads/" + newFilename;
+            // 使用简单统一的URL格式，确保与ResourceConfig中的路径映射一致
+            String avatarUrl = "/resources/" + newFilename;
             user.setAvatar(avatarUrl);
             user.setUpdateTime(LocalDateTime.now());
             updateById(user);
 
+            logger.info("用户[{}]头像更新成功，路径：{}, 物理路径：{}", userId, avatarUrl, filePath.toAbsolutePath());
             return avatarUrl;
         } catch (IOException e) {
             logger.error("上传头像失败", e);

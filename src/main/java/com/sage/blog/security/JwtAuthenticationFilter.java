@@ -30,7 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private JwtTokenProvider tokenProvider;
 
     @Autowired
-    private UserDetailsService userDetailsService;
+    private UserDetailsServiceImpl userDetailsService;
 
     /**
      * 无参构造函数
@@ -43,27 +43,104 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            // 从请求中获取JWT令牌
+            String path = request.getRequestURI();
+            String method = request.getMethod();
+
+            logger.debug("处理请求: {} {}", method, path);
+            logger.debug("请求头Authorization: {}", request.getHeader("Authorization"));
+            logger.debug("请求参数token: {}", request.getParameter("token"));
+
+            if (path.contains("/api/auth/") ||
+                    path.endsWith(".js") ||
+                    path.endsWith(".css") ||
+                    path.endsWith(".ico") ||
+                    path.endsWith(".png") ||
+                    path.endsWith(".jpg") ||
+                    path.endsWith(".jpeg") ||
+                    path.endsWith(".gif") ||
+                    path.endsWith(".svg") ||
+                    path.contains("/resources/") ||
+                    path.contains("/uploads/") ||
+                    path.equals("/sageblog") ||
+                    path.equals("/sageblog/") ||
+                    path.equals("/sageblog/login") ||
+                    path.equals("/sageblog/register")) {
+
+                logger.debug("公开资源，跳过JWT验证: {}", path);
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            // 获取JWT令牌
             String jwt = getJwtFromRequest(request);
 
-            // 验证令牌是否有效
-            if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                // 从令牌中获取用户名
-                String username = tokenProvider.getUsernameFromToken(jwt);
+            if (jwt == null) {
+                logger.debug("路径 {} 没有找到JWT令牌", path);
 
-                // 加载用户详情
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                // 对于dashboard和profile请求，使用特殊处理
+                if (path.contains("/dashboard") || path.contains("/profile")) {
+                    logger.info("访问受保护页面没有令牌: {}", path);
+
+                    // 构建重定向URL
+                    String contextPath = request.getContextPath();
+                    String redirectUrl = contextPath.isEmpty() ? "/" : contextPath + "/";
+
+                    // 处理带有上下文路径的情况
+                    if (path.contains("/sageblog/") && !redirectUrl.contains("/sageblog/")) {
+                        redirectUrl = "/sageblog/";
+                    }
+
+                    logger.debug("重定向用户到首页: {}", redirectUrl);
+                    response.sendRedirect(redirectUrl);
+                    return;
+                }
+
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            logger.debug("找到JWT令牌: {}", jwt.substring(0, Math.min(10, jwt.length())) + "...");
+
+            // 验证JWT令牌
+            if (tokenProvider.validateToken(jwt)) {
+                // 获取用户ID
+                Long userId = tokenProvider.getUserIdFromJWT(jwt);
+                logger.debug("JWT令牌有效，用户ID: {}", userId);
 
                 // 创建认证对象
+                UserDetails userDetails = userDetailsService.loadUserById(userId);
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 // 设置安全上下文
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                logger.debug("用户 {} 已成功认证", userDetails.getUsername());
+            } else {
+                logger.warn("JWT令牌无效，清除安全上下文");
+                SecurityContextHolder.clearContext();
+
+                // 对于dashboard和profile请求，使用特殊处理
+                if (path.contains("/dashboard") || path.contains("/profile")) {
+                    logger.info("访问受保护页面令牌无效: {}", path);
+
+                    // 构建重定向URL
+                    String contextPath = request.getContextPath();
+                    String redirectUrl = contextPath.isEmpty() ? "/" : contextPath + "/";
+
+                    // 处理带有上下文路径的情况
+                    if (path.contains("/sageblog/") && !redirectUrl.contains("/sageblog/")) {
+                        redirectUrl = "/sageblog/";
+                    }
+
+                    logger.debug("重定向用户到首页: {}", redirectUrl);
+                    response.sendRedirect(redirectUrl);
+                    return;
+                }
             }
         } catch (Exception ex) {
-            logger.error("无法设置用户认证", ex);
+            logger.error("JWT认证异常", ex);
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
@@ -79,9 +156,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return bearerToken.substring(7);
         }
 
-        // 从请求参数中获取
+        // 从URL参数中获取token参数
         String paramToken = request.getParameter("token");
         if (StringUtils.hasText(paramToken)) {
+            logger.debug("从URL参数中获取到令牌");
             return paramToken;
         }
 
@@ -89,10 +167,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if ("token".equals(cookie.getName())) {
+                if ("token".equals(cookie.getName()) || "jwtToken".equals(cookie.getName())) {
                     return cookie.getValue();
                 }
             }
+        }
+
+        // 从请求header中获取X-Auth-Token
+        String xAuthToken = request.getHeader("X-Auth-Token");
+        if (StringUtils.hasText(xAuthToken)) {
+            return xAuthToken;
         }
 
         return null;

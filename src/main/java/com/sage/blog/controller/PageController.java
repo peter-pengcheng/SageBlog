@@ -70,6 +70,8 @@ public class PageController {
      */
     @GetMapping("/profile")
     public String profile() {
+        // 无需认证检查，已由JWT过滤器处理
+        // 如果用户未认证，过滤器将重定向到登录页
         return "user/profile";
     }
 
@@ -78,6 +80,8 @@ public class PageController {
      */
     @GetMapping("/dashboard")
     public String dashboard() {
+        // 无需认证检查，已由JWT过滤器处理
+        // 如果用户未认证，过滤器将重定向到登录页
         return "user/dashboard";
     }
 }

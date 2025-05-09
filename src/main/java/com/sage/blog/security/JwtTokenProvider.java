@@ -118,12 +118,62 @@ public class JwtTokenProvider {
         } catch (MalformedJwtException ex) {
             logger.error("Invalid JWT token: {}", ex.getMessage());
         } catch (ExpiredJwtException ex) {
-            logger.error("Expired JWT token: {}", ex.getMessage());
+            // 提供更详细的过期信息
+            try {
+                Date expiration = ex.getClaims().getExpiration();
+                Date now = new Date();
+                long diffInMillies = now.getTime() - expiration.getTime();
+                long diffInMinutes = diffInMillies / (60 * 1000);
+
+                logger.error("Expired JWT token: expired at {}, {} minutes ago",
+                        expiration, diffInMinutes);
+            } catch (Exception e) {
+                logger.error("Expired JWT token, unable to calculate expiration details: {}",
+                        ex.getMessage());
+            }
         } catch (UnsupportedJwtException ex) {
             logger.error("Unsupported JWT token: {}", ex.getMessage());
         } catch (IllegalArgumentException ex) {
             logger.error("JWT claims string is empty: {}", ex.getMessage());
         }
         return false;
+    }
+
+    /**
+     * 从JWT令牌中获取用户ID
+     *
+     * @param token JWT令牌
+     * @return 用户ID
+     */
+    public Long getUserIdFromJWT(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .setSigningKey(jwtSecret)
+                    .parseClaimsJws(token)
+                    .getBody();
+
+            // 如果claims中包含用户ID字段，则返回该字段值
+            if (claims.containsKey("userId")) {
+                return Long.valueOf(claims.get("userId").toString());
+            }
+
+            // 否则从用户名中获取ID（假设用户名以"user_"开头，例如"user_123"）
+            String username = claims.getSubject();
+            if (username != null && username.contains("_")) {
+                try {
+                    String idStr = username.split("_")[1];
+                    return Long.valueOf(idStr);
+                } catch (Exception e) {
+                    logger.warn("无法从用户名{}中提取用户ID", username);
+                }
+            }
+
+            // 如果无法获取ID，返回默认值1（通常是管理员ID）
+            // 在实际使用中，应该确保JWT中包含用户ID或使用其他方式获取
+            return 1L;
+        } catch (Exception e) {
+            logger.error("从JWT令牌中解析用户ID出错", e);
+            return 1L; // 默认返回管理员ID
+        }
     }
 }

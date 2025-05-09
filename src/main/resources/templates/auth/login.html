@@ -124,6 +124,89 @@
                     }
                 });
 
+                // 处理登录表单提交
+                $('#loginForm').submit(function (e) {
+                    e.preventDefault();
+
+                    // 获取表单数据
+                    const username = $('#username').val();
+                    const password = $('#password').val();
+
+                    // 验证数据
+                    if (!username) {
+                        showAlert('请输入用户名', 'danger');
+                        return false;
+                    }
+
+                    if (!password) {
+                        showAlert('请输入密码', 'danger');
+                        return false;
+                    }
+
+                    // 准备数据
+                    const loginData = {
+                        username: username,
+                        password: password
+                    };
+
+                    // 更改按钮状态
+                    const submitBtn = $(this).find('button[type="submit"]');
+                    const originalText = submitBtn.html();
+                    submitBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 登录中...');
+                    submitBtn.prop('disabled', true);
+
+                    // 清除可能的旧数据
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('jwtToken');
+                    localStorage.removeItem('currentUser');
+
+                    // 发送登录请求
+                    $.ajax({
+                        url: '/sageblog/api/auth/login',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(loginData),
+                        success: function (response) {
+                            if (response.code === 200) {
+                                // 登录成功，保存令牌和用户信息
+                                const token = response.data.token || response.data.accessToken;
+                                localStorage.setItem('jwtToken', token);
+
+                                // 保存用户信息
+                                if (response.data.user) {
+                                    localStorage.setItem('currentUser', JSON.stringify(response.data.user));
+                                }
+
+                                // 显示成功消息
+                                showAlert('登录成功，正在跳转...', 'success');
+
+                                // 重定向到首页或之前的页面
+                                setTimeout(function () {
+                                    window.location.href = '/sageblog/';
+                                }, 1000);
+                            } else {
+                                // 登录失败
+                                showAlert('登录失败: ' + response.message, 'danger');
+                                // 恢复按钮状态
+                                submitBtn.html(originalText);
+                                submitBtn.prop('disabled', false);
+                            }
+                        },
+                        error: function (xhr) {
+                            // 恢复按钮状态
+                            submitBtn.html(originalText);
+                            submitBtn.prop('disabled', false);
+
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                showAlert('登录失败: ' + response.message, 'danger');
+                            } catch (e) {
+                                showAlert('登录失败，请稍后重试', 'danger');
+                            }
+                        }
+                    });
+                });
+
                 // JWT登录
                 $('#jwtLoginForm').submit(function (e) {
                     e.preventDefault();

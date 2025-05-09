@@ -41,25 +41,51 @@ public class AuthController {
     @PostMapping("/login")
     public Result<JwtAuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         try {
+            logger.info("用户登录请求: {}", loginRequest.getUsername());
+
+            // 验证用户状态
+            User user = userService.getUserByUsername(loginRequest.getUsername());
+            if (user != null && user.getStatus() == 0) {
+                logger.warn("账号正在审核中: {}", loginRequest.getUsername());
+                return Result.failed("您的账号正在审核中，请等待管理员审核通过后再尝试登录");
+            }
+
+            // 生成JWT令牌
             String token = authService.login(loginRequest.getUsername(), loginRequest.getPassword());
+            if (token == null) {
+                logger.error("登录失败，令牌生成失败: {}", loginRequest.getUsername());
+                return Result.failed("登录失败，请稍后再试");
+            }
 
             // 获取用户信息
-            User user = userService.getUserByUsername(loginRequest.getUsername());
+            user = userService.getUserByUsername(loginRequest.getUsername());
+            if (user == null) {
+                logger.error("登录后无法获取用户信息: {}", loginRequest.getUsername());
+                return Result.failed("登录后获取用户信息失败");
+            }
+
             // 移除敏感信息
             user.setPassword(null);
 
-            return Result.success(new JwtAuthResponse(token, user));
+            logger.info("用户登录成功: {}", loginRequest.getUsername());
+
+            // 返回令牌和用户信息
+            JwtAuthResponse response = new JwtAuthResponse(token, user);
+            return Result.success(response);
         } catch (org.springframework.security.authentication.DisabledException e) {
             // 处理账号待审核的情况
+            logger.warn("账号被禁用: {}, 原因: {}", loginRequest.getUsername(), e.getMessage());
             return Result.failed(e.getMessage());
         } catch (org.springframework.security.authentication.BadCredentialsException e) {
             // 处理用户名或密码错误的情况
+            logger.warn("用户名或密码错误: {}", loginRequest.getUsername());
             return Result.failed("用户名或密码错误");
         } catch (org.springframework.security.authentication.LockedException e) {
             // 处理账号被锁定的情况
+            logger.warn("账号被锁定: {}", loginRequest.getUsername());
             return Result.failed("您的账号已被锁定，请联系管理员");
         } catch (Exception e) {
-            logger.error("用户登录异常", e);
+            logger.error("用户登录异常: {}", loginRequest.getUsername(), e);
             return Result.failed("登录失败，请稍后再试");
         }
     }

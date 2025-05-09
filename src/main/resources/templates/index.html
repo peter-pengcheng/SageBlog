@@ -209,7 +209,7 @@
                         </li>
                     </ul>
                     <!-- 未登录状态 -->
-                    <ul class="navbar-nav ms-auto auth-not-logged-in" style="display: none;">
+                    <ul class="navbar-nav ms-auto auth-not-logged-in">
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{/login}">
                                 <i class="fas fa-sign-in-alt me-1"></i>登录
@@ -230,12 +230,14 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                                 <li>
-                                    <a class="dropdown-item" th:href="@{/profile}">
+                                    <a class="dropdown-item profile-link" href="javascript:void(0);"
+                                        onclick="navigateWithToken('profile')">
                                         <i class="fas fa-user me-2"></i>个人信息
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" th:href="@{/dashboard}">
+                                    <a class="dropdown-item dashboard-link" href="javascript:void(0);"
+                                        onclick="navigateWithToken('dashboard')">
                                         <i class="fas fa-tachometer-alt me-2"></i>控制面板
                                     </a>
                                 </li>
@@ -271,10 +273,12 @@
                             </a>
                         </div>
                         <div sec:authorize="isAuthenticated()">
-                            <a th:href="@{/profile}" class="btn btn-primary btn-lg">
+                            <a href="javascript:void(0);" onclick="navigateWithToken('profile')"
+                                class="btn btn-primary btn-lg">
                                 <i class="fas fa-user me-2"></i>个人中心
                             </a>
-                            <a th:href="@{/dashboard}" class="btn btn-outline-primary btn-lg">
+                            <a href="javascript:void(0);" onclick="navigateWithToken('dashboard')"
+                                class="btn btn-outline-primary btn-lg">
                                 <i class="fas fa-tachometer-alt me-2"></i>控制面板
                             </a>
                         </div>
@@ -378,64 +382,85 @@
             const contextPath = /*[[@{/}]]*/ '';
             console.log('首页初始化，contextPath:', contextPath);
 
-            // 检查用户登录状态并更新UI
-            function updateAuthUI() {
-                const isLoggedIn = AuthUtil.isLoggedIn();
-                console.log('检查登录状态:', isLoggedIn);
-
-                if (isLoggedIn) {
-                    // 已登录状态
-                    console.log('用户已登录，更新UI显示已登录状态');
-                    $('.auth-logged-in').show();
-                    $('.auth-not-logged-in').hide();
-
-                    // 更新用户名
-                    const user = AuthUtil.getCurrentUser();
-                    console.log('当前用户信息:', user);
-
-                    if (user && user.nickname) {
-                        $('#currentUsername').text(user.nickname);
-                    } else if (user && user.username) {
-                        $('#currentUsername').text(user.username);
+            // 导航到页面并添加token
+            function navigateWithToken(page) {
+                const token = localStorage.getItem('jwtToken');
+                if (token) {
+                    // 如果token超过1024个字符，使用请求头方式
+                    if (token.length > 1024) {
+                        // 使用fetch API发送请求，并在header中包含token
+                        fetch(contextPath + page, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': 'Bearer ' + token,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                            .then(response => {
+                                if (response.redirected) {
+                                    window.location.href = response.url;
+                                } else {
+                                    window.location.href = contextPath + page;
+                                }
+                            })
+                            .catch(error => {
+                                console.error('导航错误：', error);
+                                window.location.href = contextPath + page;
+                            });
+                    } else {
+                        // 使用URL参数方式
+                        window.location.href = contextPath + page + '?token=' + encodeURIComponent(token);
                     }
-
-                    // 更新操作按钮区域
-                    $('.action-buttons [sec\\:authorize="!isAuthenticated()"]').hide();
-                    $('.action-buttons [sec\\:authorize="isAuthenticated()"]').show();
                 } else {
-                    // 未登录状态
-                    console.log('用户未登录，更新UI显示未登录状态');
-                    $('.auth-logged-in').hide();
-                    $('.auth-not-logged-in').show();
-
-                    // 更新操作按钮区域
-                    $('.action-buttons [sec\\:authorize="!isAuthenticated()"]').show();
-                    $('.action-buttons [sec\\:authorize="isAuthenticated()"]').hide();
+                    if (confirm('您需要先登录才能访问该页面，是否前往登录?')) {
+                        window.location.href = contextPath + 'login?redirect=' + encodeURIComponent(contextPath + page);
+                    }
                 }
             }
 
+            // 页面加载完成后执行
             $(document).ready(function () {
                 console.log('页面DOM加载完成，准备初始化...');
 
-                // 检查localStorage中的token
-                const token = localStorage.getItem('jwtToken');
-                console.log('当前JWT令牌:', token ? '存在' : '不存在');
+                // 立即更新UI而不是等待检查
+                $('.auth-logged-in').hide();
+                $('.auth-not-logged-in').show();
 
-                // 初始化更新UI
-                updateAuthUI();
+                // 尝试获取认证信息
+                try {
+                    // 检查localStorage中的token
+                    const token = localStorage.getItem('jwtToken');
+                    const userStr = localStorage.getItem('currentUser');
+
+                    if (token && userStr) {
+                        const user = JSON.parse(userStr);
+
+                        // 更新用户名显示
+                        $('#currentUsername').text(user.nickname || user.username || '用户');
+
+                        // 更新UI状态
+                        $('.auth-logged-in').show();
+                        $('.auth-not-logged-in').hide();
+                        $('.action-buttons div').first().hide();
+                        $('.action-buttons div').last().show();
+                    } else {
+                        // 未登录状态
+                        $('.auth-logged-in').hide();
+                        $('.auth-not-logged-in').show();
+                        $('.action-buttons div').first().show();
+                        $('.action-buttons div').last().hide();
+                    }
+                } catch (e) {
+                    console.error('初始化错误:', e);
+                }
 
                 // 注册退出登录事件
-                $('#logoutBtn').on('click', function () {
-                    console.log('用户点击退出登录');
-                    AuthUtil.logout();
-                });
-
-                // 添加延迟动画效果
-                const animationElements = document.querySelectorAll('.animate-fadeIn');
-                animationElements.forEach(element => {
-                    setTimeout(() => {
-                        element.style.opacity = '1';
-                    }, 100);
+                $('#logoutBtn').on('click', function (e) {
+                    e.preventDefault();
+                    localStorage.removeItem('jwtToken');
+                    localStorage.removeItem('currentUser');
+                    window.location.href = contextPath + 'login';
+                    return false;
                 });
             });
             /*]]>*/

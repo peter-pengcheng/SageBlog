@@ -221,6 +221,10 @@
                     password: password
                 };
 
+                // 清空之前的会话数据，确保不会显示旧的用户信息
+                console.log('[登录页] 清除旧的认证数据');
+                AuthUtil.clearAllAuthData();
+
                 // 发送登录请求
                 console.log('[登录页] 发送登录请求到:', contextPath + 'api/auth/login');
                 $.ajax({
@@ -248,6 +252,16 @@
                                 // 保存用户信息
                                 const user = response.data.user || {};
                                 console.log('[登录页] 获取到用户信息:', user);
+
+                                // 确保用户对象包含必要字段
+                                if (!user || typeof user !== 'object') {
+                                    console.error('[登录页] 用户信息格式不正确');
+                                    $('#error-message').text('登录成功但获取用户信息失败');
+                                    $('#login-error').show();
+                                    return;
+                                }
+
+                                // 保存用户信息
                                 AuthUtil.setCurrentUser(user);
 
                                 // 获取重定向URL
@@ -261,12 +275,29 @@
                                 $('#error-message').text('登录成功，正在跳转...');
                                 $('#login-error').show();
 
-                                // 使用延时确保数据保存完毕
-                                setTimeout(function () {
-                                    console.log('[登录页] 执行页面跳转...');
-                                    // 使用replace防止浏览器回退到登录页
-                                    window.location.replace(targetUrl);
-                                }, 500);
+                                // 向localStorage存入额外信息，标记登录时间
+                                localStorage.setItem('loginTime', new Date().getTime());
+                                // 保存一个HTTP-only cookie
+                                document.cookie = "isLoggedIn=true; path=/;";
+
+                                // 发送一个XHR请求确认后端认证状态
+                                const pingRequest = new XMLHttpRequest();
+                                pingRequest.open('GET', contextPath + 'api/users/info', true);
+                                pingRequest.setRequestHeader('Authorization', 'Bearer ' + token);
+                                pingRequest.onreadystatechange = function () {
+                                    if (this.readyState === 4) {
+                                        console.log('[登录页] 认证测试响应状态:', this.status);
+
+                                        // 无论成功与否，都跳转到目标页面
+                                        // 使用延时确保数据保存完毕
+                                        setTimeout(function () {
+                                            console.log('[登录页] 执行页面跳转...');
+                                            // 使用replace防止浏览器回退到登录页
+                                            window.location.replace(targetUrl);
+                                        }, 500);
+                                    }
+                                };
+                                pingRequest.send();
                             } catch (e) {
                                 console.error('[登录页] 保存用户数据出错:', e);
                                 $('#error-message').text('登录成功但保存用户信息失败: ' + e.message);

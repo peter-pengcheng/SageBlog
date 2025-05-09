@@ -8,6 +8,8 @@ import com.sage.blog.model.ProfileUpdateDto;
 import com.sage.blog.model.PasswordUpdateDto;
 import com.sage.blog.service.UserService;
 import com.sage.blog.util.SecurityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -20,12 +22,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 /**
  * 用户接口控制器
  */
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/users")
 public class UserController {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserService userService;
@@ -69,26 +74,24 @@ public class UserController {
     }
 
     /**
-     * 获取当前登录用户信息
+     * 获取当前用户信息
+     *
+     * @return 用户信息
      */
     @GetMapping("/info")
-    @PreAuthorize("isAuthenticated()")
-    public ApiResponse<Map<String, Object>> getCurrentUserInfo() {
-        User user = SecurityUtils.getCurrentUser();
+    public Result<User> getCurrentUserInfo() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        logger.info("获取用户[{}]信息", username);
+
+        User user = userService.getUserByUsername(username);
         if (user == null) {
-            return ApiResponse.error("用户未登录");
+            return Result.failed("用户不存在");
         }
 
-        Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("id", user.getId());
-        userInfo.put("username", user.getUsername());
-        userInfo.put("nickname", user.getNickname());
-        userInfo.put("email", user.getEmail());
-        userInfo.put("avatar", user.getAvatar());
-        // 临时注释掉这行，直到实现获取用户角色的功能
-        // userInfo.put("roles", user.getRoles());
-
-        return ApiResponse.success(userInfo);
+        // 安全起见，清除密码信息
+        user.setPassword(null);
+        return Result.success(user);
     }
 
     /**
@@ -97,9 +100,19 @@ public class UserController {
     @GetMapping("/profile")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<Map<String, Object>> getUserProfile() {
-        User user = SecurityUtils.getCurrentUser();
-        if (user == null) {
+        // 使用Spring Security的认证上下文
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
             return ApiResponse.error("用户未登录");
+        }
+
+        // 获取认证用户的用户名
+        String username = authentication.getName();
+
+        // 通过用户名获取完整的用户信息
+        User user = userService.getUserByUsername(username);
+        if (user == null) {
+            return ApiResponse.error("用户不存在");
         }
 
         Map<String, Object> profileInfo = new HashMap<>();
@@ -116,62 +129,78 @@ public class UserController {
 
     /**
      * 更新用户个人资料
+     *
+     * @param profileDto 个人资料数据
+     * @return 更新结果
      */
-    @PutMapping("/profile")
-    @PreAuthorize("isAuthenticated()")
-    public ApiResponse<?> updateProfile(@Valid @RequestBody ProfileUpdateDto profileDto) {
-        User currentUser = SecurityUtils.getCurrentUser();
+    @PutMapping("/info")
+    public Result<User> updateProfile(@RequestBody ProfileUpdateDto profileDto) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        logger.info("用户[{}]更新个人资料", username);
+
+        User currentUser = userService.getUserByUsername(username);
         if (currentUser == null) {
-            return ApiResponse.error("用户未登录");
+            return Result.failed("用户不存在");
         }
 
-        try {
-            userService.updateProfile(currentUser.getId(), profileDto);
-            return ApiResponse.success("个人资料更新成功");
-        } catch (Exception e) {
-            return ApiResponse.error("更新失败: " + e.getMessage());
-        }
+        User updatedUser = userService.updateProfile(currentUser.getId(), profileDto);
+        // 安全起见，清除密码信息
+        updatedUser.setPassword(null);
+        return Result.success(updatedUser);
     }
 
     /**
-     * 修改密码
+     * 更新用户密码
+     *
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     * @return 更新结果
      */
     @PutMapping("/password")
-    @PreAuthorize("isAuthenticated()")
-    public ApiResponse<?> updatePassword(@Valid @RequestBody PasswordUpdateDto passwordDto) {
-        User currentUser = SecurityUtils.getCurrentUser();
+    public Result<Void> updatePassword(
+            @RequestParam String oldPassword,
+            @RequestParam String newPassword) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        logger.info("用户[{}]更新密码", username);
+
+        User currentUser = userService.getUserByUsername(username);
         if (currentUser == null) {
-            return ApiResponse.error("用户未登录");
+            return Result.failed("用户不存在");
         }
 
-        try {
-            userService.updatePassword(currentUser.getId(), passwordDto.getOldPassword(), passwordDto.getNewPassword());
-            return ApiResponse.success("密码修改成功");
-        } catch (Exception e) {
-            return ApiResponse.error("密码修改失败: " + e.getMessage());
+        boolean success = userService.updatePassword(currentUser.getId(), oldPassword, newPassword);
+        if (success) {
+            return Result.success();
+        } else {
+            return Result.failed("密码更新失败，可能是旧密码不正确");
         }
     }
 
     /**
-     * 上传头像
+     * 更新用户头像
+     *
+     * @param file 头像文件
+     * @return 头像URL
      */
     @PostMapping("/avatar")
-    @PreAuthorize("isAuthenticated()")
-    public ApiResponse<Map<String, String>> uploadAvatar(@RequestParam("file") MultipartFile file) {
-        User currentUser = SecurityUtils.getCurrentUser();
+    public Result<String> updateAvatar(@RequestParam("file") MultipartFile file) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        logger.info("用户[{}]更新头像", username);
+
+        User currentUser = userService.getUserByUsername(username);
         if (currentUser == null) {
-            return ApiResponse.error("用户未登录");
+            return Result.failed("用户不存在");
         }
 
         try {
             String avatarUrl = userService.updateAvatar(currentUser.getId(), file);
-
-            Map<String, String> result = new HashMap<>();
-            result.put("avatar", avatarUrl);
-
-            return ApiResponse.success(result);
+            return Result.success(avatarUrl);
         } catch (Exception e) {
-            return ApiResponse.error("头像上传失败: " + e.getMessage());
+            logger.error("头像上传失败", e);
+            return Result.failed("头像上传失败: " + e.getMessage());
         }
     }
 

@@ -79,19 +79,28 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         "/css/**", "/js/**", "/img/**", "/favicon.ico",
                         "/sageblog/css/**", "/sageblog/js/**", "/sageblog/img/**",
                         "/sageblog/favicon.ico", "/sageblog/resources/**",
-                        "/static/**", "/sageblog/static/**")
+                        "/static/**", "/sageblog/static/**", "/resources/**", "/webjars/**",
+                        // 添加以下表达式以确保资源目录能被正确访问
+                        "/resources/**", "/resources/*", "/resources/*/*",
+                        "/sageblog/resources/**", "/sageblog/resources/*", "/sageblog/resources/*/*",
+                        "/uploads/**", "/sageblog/uploads/**")
                 .permitAll()
                 // 允许访问认证相关接口
-                .antMatchers("/api/auth/**").permitAll()
-                // 允许访问登录、注册等页面
-                .antMatchers("/", "/login", "/register", "/register-success", "/forgot-password", "/reset-password")
+                .antMatchers("/api/auth/**", "/sageblog/api/auth/**", "/api/test/**", "/sageblog/api/test/**")
                 .permitAll()
-                // 需要认证才能访问的页面
-                .antMatchers("/profile").authenticated()
+                // 允许访问登录、注册等页面
+                .antMatchers("/", "/sageblog/", "/login", "/sageblog/login",
+                        "/register", "/sageblog/register",
+                        "/register-success", "/sageblog/register-success",
+                        "/forgot-password", "/sageblog/forgot-password",
+                        "/reset-password", "/sageblog/reset-password")
+                .permitAll()
+                // 需要认证才能访问的页面 - 使用表达式方式更清晰
+                .antMatchers("/profile", "/sageblog/profile", "/dashboard", "/sageblog/dashboard").authenticated()
                 // 其他请求需要认证
                 .anyRequest().authenticated()
                 .and()
-                // 表单登录配置
+                // 表单登录配置 - 修正表单登录链接
                 .formLogin()
                 .loginPage("/login")
                 .defaultSuccessUrl("/")
@@ -102,10 +111,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .tokenValiditySeconds(86400) // 记住我的有效期：1天
                 .userDetailsService(userDetailsService)
                 .and()
-                // 登出配置
+                // 登出配置 - 修正登出链接
                 .logout()
                 .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout")
+                .logoutSuccessUrl("/")
                 .deleteCookies("JSESSIONID", "remember-me");
 
         // 添加JWT过滤器

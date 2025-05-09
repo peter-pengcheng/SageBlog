@@ -77,7 +77,7 @@
                     </li>
                 </ul>
                 <!-- 未登录状态 -->
-                <ul class="navbar-nav auth-not-logged-in" style="display: none;">
+                <ul class="navbar-nav auth-not-logged-in">
                     <li class="nav-item">
                         <a class="nav-link" th:href="@{/login}">
                             <i class="fas fa-sign-in-alt me-1"></i>登录
@@ -98,12 +98,14 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li>
-                                <a class="dropdown-item" th:href="@{/profile}">
+                                <a class="dropdown-item" href="javascript:void(0);"
+                                    onclick="navigateWithToken('profile')">
                                     <i class="fas fa-user me-2"></i>个人信息
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item" th:href="@{/dashboard}">
+                                <a class="dropdown-item" href="javascript:void(0);"
+                                    onclick="navigateWithToken('dashboard')">
                                     <i class="fas fa-tachometer-alt me-2"></i>控制面板
                                 </a>
                             </li>
@@ -128,11 +130,10 @@
             <h1>欢迎来到 SageBlog</h1>
             <p class="lead mb-4">一个安全、高效的用户管理系统，轻松管理您的用户和权限</p>
             <div>
-                <a th:href="@{/register}" class="btn btn-light btn-lg me-2 auth-not-logged-in"
-                    style="display: none;">立即注册</a>
-                <a th:href="@{/login}" class="btn btn-outline-light btn-lg auth-not-logged-in"
-                    style="display: none;">用户登录</a>
-                <a th:href="@{/dashboard}" class="btn btn-light btn-lg auth-logged-in" style="display: none;">进入控制面板</a>
+                <a th:href="@{/register}" class="btn btn-light btn-lg me-2 auth-not-logged-in">立即注册</a>
+                <a th:href="@{/login}" class="btn btn-outline-light btn-lg auth-not-logged-in">用户登录</a>
+                <a href="javascript:void(0);" onclick="navigateWithToken('dashboard')"
+                    class="btn btn-light btn-lg auth-logged-in" style="display: none;">进入控制面板</a>
             </div>
         </div>
     </section>
@@ -224,13 +225,14 @@
                 <h2>立即开始</h2>
                 <p>加入我们，开始您的博客之旅</p>
                 <div class="mt-4">
-                    <a href="/register" class="btn btn-primary me-2 auth-not-logged-in" style="display: none;">
+                    <a th:href="@{/register}" class="btn btn-primary me-2 auth-not-logged-in">
                         <i class="fas fa-user-plus me-2"></i>注册
                     </a>
-                    <a href="/login" class="btn btn-outline-primary auth-not-logged-in" style="display: none;">
+                    <a th:href="@{/login}" class="btn btn-outline-primary auth-not-logged-in">
                         <i class="fas fa-sign-in-alt me-2"></i>登录
                     </a>
-                    <a href="/dashboard" class="btn btn-success auth-logged-in" style="display: none;">
+                    <a href="javascript:void(0);" onclick="navigateWithToken('dashboard')"
+                        class="btn btn-success auth-logged-in" style="display: none;">
                         <i class="fas fa-tachometer-alt me-2"></i>进入控制面板
                     </a>
                 </div>
@@ -281,36 +283,43 @@
     <script th:src="@{/js/auth.js}"></script>
     <script th:inline="javascript">
         /*<![CDATA[*/
-        const contextPath = /*[[@{/}]]*/ '';
+        // 声明全局上下文路径变量供auth.js使用
+        var contextPath = /*[[@{/}]]*/ '';
         console.log('[首页] 应用上下文路径:', contextPath);
 
-        // 确保所有链接都使用正确的上下文路径
-        function fixUrls() {
-            // 修复注册、登录和控制面板按钮的链接
-            $('a[href="/register"]').attr('href', contextPath + 'register');
-            $('a[href="/login"]').attr('href', contextPath + 'login');
-            $('a[href="/dashboard"]').attr('href', contextPath + 'dashboard');
-            $('a[href="/profile"]').attr('href', contextPath + 'profile');
+        // 导航到页面并添加token
+        function navigateWithToken(page) {
+            const token = localStorage.getItem('jwtToken');
+            if (token) {
+                // 使用URL参数方式
+                window.location.href = contextPath + page + '?token=' + encodeURIComponent(token);
+            } else {
+                if (confirm('您需要先登录才能访问该页面，是否前往登录?')) {
+                    window.location.href = contextPath + 'login?redirect=' + encodeURIComponent(contextPath + page);
+                }
+            }
         }
 
-        // 检查登录状态并更新界面
-        function updateAuthUI() {
-            console.log('[首页] 检查登录状态...');
+        // DOM加载完成时执行
+        $(document).ready(function () {
+            console.log('[首页] DOM加载完成，初始化页面...');
 
+            // 手动显示/隐藏认证状态UI元素
             try {
-                const isLoggedIn = AuthUtil.isLoggedIn();
-                console.log('[首页] 登录状态:', isLoggedIn);
+                // 默认先显示未登录状态
+                $('.auth-logged-in').hide();
+                $('.auth-not-logged-in').show();
 
-                if (isLoggedIn) {
-                    // 已登录状态
+                // 检查是否已登录
+                if (AuthUtil.isLoggedIn()) {
+                    console.log('[首页] 检测到用户已登录');
                     $('.auth-logged-in').show();
                     $('.auth-not-logged-in').hide();
 
                     // 获取并显示用户信息
                     const user = AuthUtil.getCurrentUser();
-                    console.log('[首页] 当前用户:', user);
-
                     if (user) {
+                        console.log('[首页] 当前用户:', user.username);
                         // 设置用户名
                         const displayName = user.nickname || user.username || '用户';
                         $('#currentUsername').text(displayName);
@@ -320,56 +329,88 @@
                             <strong>已登录!</strong> 欢迎回来，${displayName}。
                             <button class="btn btn-sm btn-outline-danger ms-3" id="logoutBtnStatus">退出登录</button>
                         `).show();
-                    } else {
-                        console.warn('[首页] 已登录但获取不到用户信息');
+                    }
+
+                    // 刷新用户信息
+                    setTimeout(function () {
+                        refreshUserInfo();
+                    }, 1000);
+                } else {
+                    console.log('[首页] 用户未登录');
+                }
+            } catch (e) {
+                console.error('[首页] 初始化认证UI出错:', e);
+            }
+
+            // 绑定退出登录事件
+            $(document).on('click', '#logoutBtn, #logoutBtnStatus', function (e) {
+                e.preventDefault();
+                console.log('[首页] 用户点击退出登录');
+
+                // 清除所有认证数据
+                localStorage.removeItem('jwtToken');
+                localStorage.removeItem('currentUser');
+
+                // 刷新页面
+                window.location.reload();
+                return false;
+            });
+        });
+
+        // 刷新用户信息，确保显示最新数据
+        function refreshUserInfo() {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                console.log('[首页] 无token，跳过刷新用户信息');
+                return;
+            }
+
+            console.log('[首页] 尝试刷新用户信息...');
+
+            $.ajax({
+                url: contextPath + 'api/users/info',
+                type: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                success: function (response) {
+                    console.log('[首页] 获取用户信息成功:', response);
+
+                    if (response.code === 200 && response.data) {
+                        // 更新localStorage中的用户信息
+                        const user = response.data;
+                        localStorage.setItem('currentUser', JSON.stringify(user));
+
+                        // 更新UI显示
+                        const displayName = user.nickname || user.username || '用户';
+                        $('#currentUsername').text(displayName);
+
+                        // 显示登录状态
                         $('#loginStatus').html(`
-                            <strong>已登录!</strong> 但无法获取您的用户信息。
+                            <strong>已登录!</strong> 欢迎回来，${displayName}。
                             <button class="btn btn-sm btn-outline-danger ms-3" id="logoutBtnStatus">退出登录</button>
                         `).show();
                     }
-                } else {
-                    // 未登录状态
-                    $('.auth-logged-in').hide();
-                    $('.auth-not-logged-in').show();
+                },
+                error: function (xhr, status, error) {
+                    console.error('[首页] 获取用户信息失败:', error);
+                    console.log('状态码:', xhr.status);
 
-                    // 显示登录状态
-                    $('#loginStatus').html(`
-                        <strong>未登录</strong> 请
-                        <a href="${contextPath}login" class="alert-link">登录</a>
-                        或
-                        <a href="${contextPath}register" class="alert-link">注册</a>
-                        以获取完整功能。
-                    `).show();
+                    if (xhr.status === 401) {
+                        console.log('[首页] 认证失败，清除认证数据');
+
+                        // 清除认证数据
+                        localStorage.removeItem('jwtToken');
+                        localStorage.removeItem('currentUser');
+
+                        // 更新UI
+                        $('.auth-logged-in').hide();
+                        $('.auth-not-logged-in').show();
+                        $('#loginStatus').hide();
+                    }
                 }
-            } catch (error) {
-                console.error('[首页] 检查登录状态出错:', error);
-                // 出错时默认显示未登录状态
-                $('.auth-logged-in').hide();
-                $('.auth-not-logged-in').show();
-
-                $('#loginStatus').html(`
-                    <strong>检查登录状态出错</strong> 请刷新页面或
-                    <a href="${contextPath}login" class="alert-link">重新登录</a>。
-                `).removeClass('alert-info').addClass('alert-warning').show();
-            }
-        }
-
-        $(document).ready(function () {
-            console.log('[首页] 页面已加载');
-
-            // 修复URL
-            fixUrls();
-
-            // 初始化界面
-            updateAuthUI();
-
-            // 注册退出登录事件
-            $(document).on('click', '#logoutBtn, #logoutBtnStatus', function () {
-                console.log('[首页] 用户点击退出登录');
-                AuthUtil.logout();
-                return false; // 阻止默认行为
             });
-        });
+        }
         /*]]>*/
     </script>
 </body>

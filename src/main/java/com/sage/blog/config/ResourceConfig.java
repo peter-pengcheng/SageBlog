@@ -1,5 +1,7 @@
 package com.sage.blog.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -13,6 +15,8 @@ import java.io.File;
  */
 @Configuration
 public class ResourceConfig implements WebMvcConfigurer {
+
+    private static final Logger logger = LoggerFactory.getLogger(ResourceConfig.class);
 
     @Value("${sageblog.file.upload-dir}")
     private String uploadDir;
@@ -50,9 +54,23 @@ public class ResourceConfig implements WebMvcConfigurer {
                 .setCachePeriod(3600)
                 .resourceChain(true);
 
-        // 上传文件的访问映射
-        String uploadPath = "file:" + uploadDir + File.separator;
-        registry.addResourceHandler("/resources/**", "/sageblog/resources/**")
-                .addResourceLocations(uploadPath);
+        // 上传文件的访问映射 - 使用外部文件系统路径
+        File uploadsDir = new File(uploadDir).getAbsoluteFile();
+        String uploadPath = "file:" + uploadsDir.getAbsolutePath() + File.separator;
+
+        logger.info("配置资源处理器: 上传目录路径 = {}", uploadPath);
+
+        // 确保路径以/结尾
+        if (!uploadPath.endsWith("/") && !uploadPath.endsWith("\\")) {
+            uploadPath += "/";
+        }
+
+        // 为资源目录添加多个匹配模式
+        registry.addResourceHandler("/resources/**", "/sageblog/resources/**",
+                "/uploads/**", "/sageblog/uploads/**")
+                .addResourceLocations(uploadPath)
+                .setCachePeriod(3600);
+
+        logger.info("资源处理器配置完成，映射 [/resources/**, /sageblog/resources/**] 到 [{}]", uploadPath);
     }
 }

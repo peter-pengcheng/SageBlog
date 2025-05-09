@@ -1,7 +1,7 @@
 server:
   port: 8080
   servlet:
-    context-path: /sageblog
+    context-path: /
 
 spring:
   application:
@@ -43,6 +43,24 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB
       enabled: true
+  # 静态资源配置
+  web:
+    resources:
+      static-locations: classpath:/static/
+      cache:
+        period: 3600
+        cachecontrol:
+          max-age: 3600
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: /**
+  # Spring MVC相关配置
+  mvc:
+    static-path-pattern: /static/**,/css/**,/js/**,/img/**
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
 
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
@@ -56,6 +74,17 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
       id-type: auto
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+    org.springframework.web.servlet.resource: DEBUG
+    com.sage.blog: DEBUG
+    org.springframework.security: DEBUG
+  file:
+    name: logs/sageblog.log
 
 # 自定义配置
 sageblog:
@@ -79,5 +108,7 @@ sageblog:
     url: http://localhost:8080/sageblog/reset-password
   # 文件上传相关配置
   file:
-    upload-dir: ./uploads
-    avatar-url-prefix: /sageblog/resources 
+    upload-dir: ${user.dir}/uploads
+    avatar-url-prefix: /resources
+  # 基础URL配置
+  base-url: http://localhost:8080
