@@ -3,6 +3,7 @@ package com.sage.blog.security;
 import io.jsonwebtoken.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -12,6 +13,10 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+
+// 使用全限定名避免冲突
+// import com.sage.blog.entity.User;
+import com.sage.blog.service.UserService;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,6 +38,9 @@ public class JwtTokenProvider {
     @Value("${sageblog.jwt.expiration}")
     private int jwtExpiration;
 
+    @Autowired
+    private UserService userService;
+
     /**
      * 生成JWT令牌
      *
@@ -50,9 +58,24 @@ public class JwtTokenProvider {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
 
+        // 获取用户ID
+        Long userId = null;
+        try {
+            if (authentication.getPrincipal() instanceof UserDetails) {
+                String username = ((UserDetails) authentication.getPrincipal()).getUsername();
+                com.sage.blog.entity.User user = userService.getUserByUsername(username);
+                if (user != null) {
+                    userId = user.getId();
+                }
+            }
+        } catch (Exception e) {
+            logger.error("获取用户ID失败", e);
+        }
+
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
                 .claim("auth", authorities)
+                .claim("userId", userId)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
@@ -152,28 +175,40 @@ public class JwtTokenProvider {
                     .parseClaimsJws(token)
                     .getBody();
 
-            // 如果claims中包含用户ID字段，则返回该字段值
+            // 从claims中获取userId字段
             if (claims.containsKey("userId")) {
-                return Long.valueOf(claims.get("userId").toString());
-            }
-
-            // 否则从用户名中获取ID（假设用户名以"user_"开头，例如"user_123"）
-            String username = claims.getSubject();
-            if (username != null && username.contains("_")) {
-                try {
-                    String idStr = username.split("_")[1];
-                    return Long.valueOf(idStr);
-                } catch (Exception e) {
-                    logger.warn("无法从用户名{}中提取用户ID", username);
+                Object userIdObj = claims.get("userId");
+                if (userIdObj != null) {
+                    // 转换为Long类型
+                    if (userIdObj instanceof Integer) {
+                        return ((Integer) userIdObj).longValue();
+                    } else if (userIdObj instanceof Long) {
+                        return (Long) userIdObj;
+                    } else if (userIdObj instanceof String) {
+                        try {
+                            return Long.valueOf((String) userIdObj);
+                        } catch (NumberFormatException e) {
+                            logger.warn("无法将字符串转换为用户ID: {}", userIdObj);
+                        }
+                    }
                 }
             }
 
-            // 如果无法获取ID，返回默认值1（通常是管理员ID）
-            // 在实际使用中，应该确保JWT中包含用户ID或使用其他方式获取
-            return 1L;
+            // 如果无法从claims中获取有效的userId，则尝试通过用户名查询
+            String username = claims.getSubject();
+            if (username != null) {
+                com.sage.blog.entity.User user = userService.getUserByUsername(username);
+                if (user != null) {
+                    return user.getId();
+                }
+            }
+
+            // 如果无法获取到用户ID，记录警告并返回null
+            logger.warn("无法从JWT令牌中获取有效的用户ID");
+            return null;
         } catch (Exception e) {
             logger.error("从JWT令牌中解析用户ID出错", e);
-            return 1L; // 默认返回管理员ID
+            return null;
         }
     }
 }

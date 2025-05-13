@@ -80,18 +80,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 对于dashboard和profile请求，使用特殊处理
                 if (path.contains("/dashboard") || path.contains("/profile")) {
                     logger.info("访问受保护页面没有令牌: {}", path);
-
-                    // 构建重定向URL
-                    String contextPath = request.getContextPath();
-                    String redirectUrl = contextPath.isEmpty() ? "/" : contextPath + "/";
-
-                    // 处理带有上下文路径的情况
-                    if (path.contains("/sageblog/") && !redirectUrl.contains("/sageblog/")) {
-                        redirectUrl = "/sageblog/";
-                    }
-
-                    logger.debug("重定向用户到首页: {}", redirectUrl);
-                    response.sendRedirect(redirectUrl);
+                    redirectToLogin(response, path, request);
                     return;
                 }
 
@@ -106,6 +95,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 获取用户ID
                 Long userId = tokenProvider.getUserIdFromJWT(jwt);
                 logger.debug("JWT令牌有效，用户ID: {}", userId);
+
+                if (userId == null) {
+                    logger.warn("JWT令牌中无法获取有效的用户ID");
+                    SecurityContextHolder.clearContext();
+                    // 如果是需要认证的页面，重定向到登录页
+                    if (path.contains("/dashboard") || path.contains("/profile")) {
+                        redirectToLogin(response, path, request);
+                    }
+                    filterChain.doFilter(request, response);
+                    return;
+                }
 
                 // 创建认证对象
                 UserDetails userDetails = userDetailsService.loadUserById(userId);
@@ -123,18 +123,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 对于dashboard和profile请求，使用特殊处理
                 if (path.contains("/dashboard") || path.contains("/profile")) {
                     logger.info("访问受保护页面令牌无效: {}", path);
-
-                    // 构建重定向URL
-                    String contextPath = request.getContextPath();
-                    String redirectUrl = contextPath.isEmpty() ? "/" : contextPath + "/";
-
-                    // 处理带有上下文路径的情况
-                    if (path.contains("/sageblog/") && !redirectUrl.contains("/sageblog/")) {
-                        redirectUrl = "/sageblog/";
-                    }
-
-                    logger.debug("重定向用户到首页: {}", redirectUrl);
-                    response.sendRedirect(redirectUrl);
+                    redirectToLogin(response, path, request);
                     return;
                 }
             }
@@ -180,5 +169,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         return null;
+    }
+
+    private void redirectToLogin(HttpServletResponse response, String path, HttpServletRequest request)
+            throws IOException {
+        // 构建重定向URL
+        String contextPath = request.getContextPath();
+        String redirectUrl = contextPath.isEmpty() ? "/login" : contextPath + "/login";
+
+        // 处理带有上下文路径的情况
+        if (path.contains("/sageblog/") && !redirectUrl.contains("/sageblog/")) {
+            redirectUrl = "/sageblog/login";
+        }
+
+        logger.debug("重定向用户到登录页: {}", redirectUrl);
+        response.sendRedirect(redirectUrl);
     }
 }

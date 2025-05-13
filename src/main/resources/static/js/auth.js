@@ -143,6 +143,25 @@ const AuthUtil = {
      * 退出登录
      */
     logout: function () {
+        // 先发送请求通知服务器，然后清除本地存储
+        try {
+            const token = this.getToken();
+            if (token) {
+                // 调用登出API
+                $.ajax({
+                    url: getContextPath() + 'api/auth/logout',
+                    type: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    async: false  // 同步请求，确保在页面跳转前完成
+                });
+            }
+        } catch (e) {
+            console.error('退出请求发送失败:', e);
+        }
+
+        // 清除所有认证数据
         this.clearAllAuthData();
 
         // 获取当前上下文路径并跳转到首页

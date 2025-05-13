@@ -13,6 +13,11 @@ import com.sage.blog.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -31,6 +36,9 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     /**
      * 用户登录
@@ -57,7 +65,7 @@ public class AuthController {
                 return Result.failed("登录失败，请稍后再试");
             }
 
-            // 获取用户信息
+            // 获取用户信息 - 确保使用登录用户的用户名而不是从token中获取
             user = userService.getUserByUsername(loginRequest.getUsername());
             if (user == null) {
                 logger.error("登录后无法获取用户信息: {}", loginRequest.getUsername());
@@ -197,5 +205,25 @@ public class AuthController {
         }
 
         return ApiResponse.success("密码重置成功");
+    }
+
+    /**
+     * 用户登出
+     *
+     * @return 操作结果
+     */
+    @PostMapping("/logout")
+    public Result<Void> logout() {
+        // 获取当前用户信息
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            logger.info("用户 {} 登出", userDetails.getUsername());
+        }
+
+        // 清除安全上下文
+        SecurityContextHolder.clearContext();
+
+        return Result.success();
     }
 }
