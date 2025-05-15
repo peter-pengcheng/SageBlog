@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理页面访问验证</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            margin-top: 50px;
+            padding: 30px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: #f9f9f9;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .loading {
+            display: block;
+            margin: 20px auto;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #message {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        #loginLink {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        #loginLink:hover {
+            background-color: #2980b9;
+        }
+
+        /* 隐藏表单 */
+        #tokenForm {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>管理页面访问验证</h1>
+        <p>请稍候，正在验证您的访问权限...</p>
+        <div class="loading" id="loading"></div>
+        <div id="message" style="display:none;"></div>
+        <a th:href="@{/login}" id="loginLink" style="display:none;">前往登录</a>
+
+        <!-- 隐藏的表单，用于GET提交token -->
+        <form id="tokenForm" method="GET" action="">
+            <input type="hidden" id="tokenInput" name="token" value="">
+        </form>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('[管理页面桥接] 页面加载完成，开始处理管理页面访问');
+
+            // 获取目标页面URL
+            var redirectPath = /*[[${redirectPath}]]*/ '/admin';
+            // 使用专门的端点处理token参数
+            var tokenEndpoint = '/admin/with-token';
+
+            console.log('[管理页面桥接] 目标路径: ' + redirectPath);
+            console.log('[管理页面桥接] 使用token处理端点: ' + tokenEndpoint);
+
+            // 从localStorage获取JWT令牌
+            const token = localStorage.getItem('jwtToken');
+
+            if (!token) {
+                console.error('[管理页面桥接] 无法从localStorage获取令牌，请先登录');
+                showError('未找到有效的登录令牌，请重新登录');
+                return;
+            }
+
+            console.log('[管理页面桥接] 找到JWT令牌: ' + token.substring(0, 10) + '...');
+
+            // 先尝试设置一个cookie，方便后续请求使用
+            document.cookie = "jwtToken=" + token + "; path=/; max-age=3600";
+            console.log('[管理页面桥接] 已将token存储到Cookie中');
+
+            // 直接使用表单提交到专门的带token参数的端点
+            showSuccess('令牌验证成功，正在跳转...');
+
+            const form = document.getElementById('tokenForm');
+            const tokenInput = document.getElementById('tokenInput');
+            form.action = tokenEndpoint;
+            tokenInput.value = token;
+
+            // 使用短延时确保成功消息显示
+            setTimeout(() => {
+                console.log('[管理页面桥接] 使用表单提交token到专用端点');
+                form.submit();
+            }, 500);
+        });
+
+        function showError(message) {
+            console.error('[管理页面桥接] 显示错误消息: ' + message);
+            document.getElementById('loading').style.display = 'none';
+            const messageElem = document.getElementById('message');
+            messageElem.textContent = message;
+            messageElem.className = 'error';
+            messageElem.style.display = 'block';
+            document.getElementById('loginLink').style.display = 'inline-block';
+        }
+
+        function showSuccess(message) {
+            console.log('[管理页面桥接] 显示成功消息: ' + message);
+            document.getElementById('loading').style.display = 'none';
+            const messageElem = document.getElementById('message');
+            messageElem.textContent = message;
+            messageElem.className = 'success';
+            messageElem.style.display = 'block';
+        }
+        /*]]>*/
+    </script>
+</body>
+
+</html>

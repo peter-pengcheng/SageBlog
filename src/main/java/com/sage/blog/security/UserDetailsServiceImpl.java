@@ -49,6 +49,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .map(permission -> new SimpleGrantedAuthority(permission.getCode()))
                 .collect(Collectors.toList());
 
+        // 添加管理员角色 - 这里根据ID是1或用户名是admin判断为管理员
+        if (user.getId() == 1 || "admin".equals(user.getUsername())) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        } else {
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        }
+
         // 构建UserDetails对象
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
@@ -82,6 +90,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         List<GrantedAuthority> authorities = permissions.stream()
                 .map(permission -> new SimpleGrantedAuthority(permission.getCode()))
                 .collect(Collectors.toList());
+
+        // 添加管理员角色 - 这里根据ID是1或用户名是admin判断为管理员
+        User userInfo = userService.findById(userId);
+        if (userInfo != null && (userInfo.getId() == 1 || "admin".equals(userInfo.getUsername()))) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        } else {
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        }
 
         // 构建UserDetails对象
         return new org.springframework.security.core.userdetails.User(

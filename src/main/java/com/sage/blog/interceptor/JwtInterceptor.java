@@ -2,14 +2,18 @@ package com.sage.blog.interceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Cookie;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
  * JWT拦截器
- * 用于拦截需要认证的页面请求，检查JWT令牌，并在必要时进行重定向
+ * 用于处理带有JWT token的请求
  */
 public class JwtInterceptor implements HandlerInterceptor {
 
@@ -18,61 +22,65 @@ public class JwtInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
+        String path = request.getRequestURI();
+        logger.info("JWT拦截器处理路径: {}", path);
 
-        String uri = request.getRequestURI();
-        logger.debug("JWT拦截器处理请求: {}", uri);
+        // 仅处理admin页面，但排除with-token专用端点
+        if (path.startsWith("/admin") &&
+                !path.equals("/admin-auth") &&
+                !path.contains("/admin/with-token")) {
 
-        // 获取JWT令牌，从头部、Cookie或参数中
-        String jwtToken = getJwtFromRequest(request);
+            logger.info("处理管理页面请求: {}", path);
 
-        if (jwtToken == null || jwtToken.isEmpty()) {
-            logger.debug("未找到JWT令牌，重定向到首页");
-
-            // 确保重定向URL包含上下文路径
-            String contextPath = request.getContextPath();
-            String redirectUrl = contextPath.isEmpty() ? "/" : contextPath + "/";
-
-            // 请求中如果包含/sageblog/时，确保重定向到正确的路径
-            if (uri.contains("/sageblog/") && !redirectUrl.contains("/sageblog/")) {
-                redirectUrl = "/sageblog/";
+            // 检查是否有token参数
+            String token = request.getParameter("token");
+            if (token != null && !token.isEmpty()) {
+                // 使用token参数直接通过
+                logger.info("检测到URL参数中的token，放行请求: {}", path);
+                return true;
             }
 
-            logger.debug("重定向到首页: {}", redirectUrl);
-            response.sendRedirect(redirectUrl);
+            // 检查请求中是否已经有Authorization头
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                logger.info("请求已包含Authorization头，放行请求: {}", path);
+                return true;
+            }
+
+            // 检查Cookie中是否有JWT令牌
+            Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (Cookie cookie : cookies) {
+                    if ("jwtToken".equals(cookie.getName()) && cookie.getValue() != null
+                            && !cookie.getValue().isEmpty()) {
+                        logger.info("在Cookie中找到JWT令牌，放行请求: {}", path);
+                        return true;
+                    }
+                }
+            }
+
+            // 检查当前认证状态，获取用户名
+            String username = "未知用户";
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof UserDetails) {
+                username = ((UserDetails) auth.getPrincipal()).getUsername();
+            }
+
+            // 未找到认证信息，使用权限错误页面或重定向到登录
+            if (auth != null && auth.isAuthenticated()) {
+                // 用户已认证但权限不足
+                logger.info("用户已认证但权限不足: {}", username);
+                response.sendRedirect("/permission-error?username=" + username +
+                        "&requiredPermission=system:user&page=" + path);
+            } else {
+                // 用户未认证，重定向到登录页面
+                logger.info("未找到认证信息，重定向到登录页: {}", path);
+                String redirectUrl = "/login?redirect=" + path;
+                response.sendRedirect(redirectUrl);
+            }
             return false;
         }
 
-        // JWT令牌存在，放行请求
         return true;
-    }
-
-    /**
-     * 从请求中获取JWT令牌
-     */
-    private String getJwtFromRequest(HttpServletRequest request) {
-        // 首先从Authorization头中获取
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-
-        // 从请求参数中获取
-        String paramToken = request.getParameter("token");
-        if (paramToken != null && !paramToken.isEmpty()) {
-            return paramToken;
-        }
-
-        // 从Cookie中获取
-        javax.servlet.http.Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (javax.servlet.http.Cookie cookie : cookies) {
-                if ("jwtToken".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-
-        // 尝试从localStorage读取的token可能被存在sessionStorage中
-        return null;
     }
 }

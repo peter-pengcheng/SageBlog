@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>公共脚本片段</title>
+</head>
+
+<body>
+    <!-- 公共脚本片段 -->
+    <th:block th:fragment="scripts">
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+        <!-- 认证工具 -->
+        <script src="/js/auth.js"></script>
+
+        <!-- 管理页面直接访问处理，放在最后以确保其他脚本先加载 -->
+        <script src="/js/admin-access.js"></script>
+    </th:block>
+</body>
+
+</html>

@@ -77,26 +77,24 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // 允许访问静态资源
                 .antMatchers(
                         "/css/**", "/js/**", "/img/**", "/favicon.ico",
-                        "/sageblog/css/**", "/sageblog/js/**", "/sageblog/img/**",
-                        "/sageblog/favicon.ico", "/sageblog/resources/**",
-                        "/static/**", "/sageblog/static/**", "/resources/**", "/webjars/**",
-                        // 添加以下表达式以确保资源目录能被正确访问
+                        "/static/**", "/resources/**", "/webjars/**",
                         "/resources/**", "/resources/*", "/resources/*/*",
-                        "/sageblog/resources/**", "/sageblog/resources/*", "/sageblog/resources/*/*",
-                        "/uploads/**", "/sageblog/uploads/**")
+                        "/uploads/**")
                 .permitAll()
                 // 允许访问认证相关接口
-                .antMatchers("/api/auth/**", "/sageblog/api/auth/**", "/api/test/**", "/sageblog/api/test/**")
+                .antMatchers("/api/auth/**", "/api/test/**")
                 .permitAll()
                 // 允许访问登录、注册等页面
-                .antMatchers("/", "/sageblog/", "/login", "/sageblog/login",
-                        "/register", "/sageblog/register",
-                        "/register-success", "/sageblog/register-success",
-                        "/forgot-password", "/sageblog/forgot-password",
-                        "/reset-password", "/sageblog/reset-password")
+                .antMatchers("/", "/login", "/register", "/register-success",
+                        "/forgot-password", "/reset-password", "/admin-auth",
+                        "/admin/with-token", "/admin/auth-verify",
+                        "/permission-error")
                 .permitAll()
+                // 管理后台页面权限配置 - 需要system:user权限
+                .antMatchers("/admin/**")
+                .hasAuthority("system:user")
                 // 需要认证才能访问的页面 - 使用表达式方式更清晰
-                .antMatchers("/profile", "/sageblog/profile", "/dashboard", "/sageblog/dashboard").authenticated()
+                .antMatchers("/profile", "/dashboard").authenticated()
                 // 其他请求需要认证
                 .anyRequest().authenticated()
                 .and()

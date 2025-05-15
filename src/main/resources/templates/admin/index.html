@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">管理后台 - SageBlog</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引用外部样式 -->
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+
+    <style>
+        /* 侧边栏样式 */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 60px 0 0;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 260px;
+            transition: all 0.3s;
+            background-color: #f8f9fa;
+        }
+
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 60px);
+            padding-top: 0.5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #495057;
+            padding: 0.85rem 1.5rem;
+            position: relative;
+            display: flex;
+            align-items: center;
+            border-radius: 0;
+            transition: all 0.2s;
+            margin: 2px 8px;
+        }
+
+        .sidebar .nav-link.active {
+            color: #3498db;
+            background-color: rgba(52, 152, 219, 0.1);
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(52, 152, 219, 0.15);
+        }
+
+        .sidebar .nav-link:hover {
+            background-color: rgba(52, 152, 219, 0.05);
+            border-radius: 6px;
+        }
+
+        .sidebar .nav-link i {
+            margin-right: 12px;
+            width: 20px;
+            font-size: 1.1rem;
+            text-align: center;
+            color: #6c757d;
+            transition: all 0.2s;
+        }
+
+        .sidebar .nav-link:hover i,
+        .sidebar .nav-link.active i {
+            color: #3498db;
+        }
+
+        .sidebar .nav-item.submenu>.nav-link::after {
+            content: "\f0d7";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            margin-left: auto;
+            transition: transform 0.3s;
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .sidebar .nav-item.submenu.open>.nav-link::after {
+            transform: rotate(180deg);
+        }
+
+        .sidebar .submenu-items {
+            padding-left: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .sidebar .submenu-items .nav-link {
+            padding-left: 3rem;
+            font-size: 0.95rem;
+        }
+
+        .sidebar .nav-item.submenu.open .submenu-items {
+            max-height: 500px;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            margin-left: 260px;
+            padding: 2rem;
+            transition: all 0.3s;
+            min-height: 100vh;
+            background-color: #f5f7fa;
+        }
+
+        /* 折叠侧边栏 */
+        .sidebar-collapsed .sidebar {
+            width: 70px;
+        }
+
+        .sidebar-collapsed .main-content {
+            margin-left: 70px;
+        }
+
+        .sidebar-collapsed .sidebar .nav-link span,
+        .sidebar-collapsed .sidebar .submenu-items,
+        .sidebar-collapsed .sidebar .nav-item.submenu>.nav-link::after {
+            display: none;
+        }
+
+        .sidebar-collapsed .sidebar .nav-link {
+            padding: 0.85rem;
+            justify-content: center;
+            margin: 2px 10px;
+        }
+
+        .sidebar-collapsed .sidebar .nav-link i {
+            margin-right: 0;
+            font-size: 1.25rem;
+        }
+
+        /* 仪表盘卡片 */
+        .dashboard-card {
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 1.5rem;
+            min-height: 100%;
+            border: none;
+            background-color: #fff;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .stats-card {
+            border-left: 5px solid;
+            border-radius: 10px;
+            height: 100%;
+            background-color: #fff;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .stats-card-primary {
+            border-left-color: #3498db;
+        }
+
+        .stats-card-success {
+            border-left-color: #2ecc71;
+        }
+
+        .stats-card-warning {
+            border-left-color: #f39c12;
+        }
+
+        .stats-card-danger {
+            border-left-color: #e74c3c;
+        }
+
+        .stats-card i {
+            font-size: 2.5rem;
+            opacity: 0.8;
+        }
+
+        /* 顶部导航 */
+        .navbar {
+            padding: 0.75rem 1.5rem;
+            margin-left: 260px;
+            z-index: 1030;
+            transition: all 0.3s;
+            background: linear-gradient(90deg, #2c3e50, #34495e) !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-collapsed .navbar {
+            margin-left: 70px;
+        }
+
+        /* 美化Logo */
+        .admin-logo {
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #3498db, #1e6ba8);
+            padding: 0.5rem 0.8rem;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            margin-right: 1rem;
+            transition: all 0.3s;
+        }
+
+        .admin-logo:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .admin-logo i {
+            font-size: 1.5rem;
+            color: white;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+        }
+
+        .admin-logo-text {
+            margin-left: 0.5rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 美化输入框 */
+        .form-control,
+        .form-select {
+            border-radius: 8px;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid #e0e0e0;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .input-group .form-control {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .input-group .btn {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        /* 美化搜索框 */
+        .search-form {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-form .form-control {
+            padding-left: 40px;
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 30px;
+            transition: all 0.3s;
+        }
+
+        .search-form .form-control:focus {
+            background-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+            width: 350px;
+        }
+
+        .search-form .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-form .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* 美化面包屑 */
+        .breadcrumb {
+            background-color: transparent;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+        }
+
+        .breadcrumb-item a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .breadcrumb-item.active {
+            color: #6c757d;
+        }
+
+        /* 页面标题 */
+        .page-header {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 小屏幕适配 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .navbar {
+                margin-left: 0;
+            }
+
+            .sidebar-toggle {
+                display: block !important;
+            }
+
+            .sidebar-collapsed .sidebar {
+                transform: translateX(0);
+                width: 260px;
+            }
+
+            .sidebar-collapsed .main-content {
+                margin-left: 0;
+            }
+
+            .sidebar-collapsed .sidebar .nav-link span,
+            .sidebar-collapsed .sidebar .submenu-items,
+            .sidebar-collapsed .sidebar .nav-item.submenu>.nav-link::after {
+                display: block;
+            }
+
+            .sidebar-collapsed .sidebar .nav-link {
+                padding: 0.85rem 1.5rem;
+                justify-content: flex-start;
+                margin: 2px 8px;
+            }
+
+            .sidebar-collapsed .sidebar .nav-link i {
+                margin-right: 12px;
+                font-size: 1.1rem;
+            }
+
+            .search-form {
+                width: 100%;
+            }
+
+            .search-form .form-control:focus {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <button type="button" id="sidebarToggle" class="btn btn-dark d-inline-block d-md-none me-auto">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a class="navbar-brand" href="#">
+                <div class="admin-logo">
+                    <i class="fas fa-cogs"></i>
+                    <span class="admin-logo-text">SageBlog</span>
+                </div>
+            </a>
+
+            <!-- 搜索框 -->
+            <div class="d-none d-md-block me-auto">
+                <form class="search-form">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="search" class="form-control" placeholder="搜索内容..." aria-label="Search">
+                </form>
+            </div>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" th:href="@{/}" target="_blank">
+                            <i class="fas fa-external-link-alt me-1"></i>访问前台
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i><span id="currentAdminUsername">管理员</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" th:href="@{/profile}">
+                                    <i class="fas fa-user me-2"></i>个人信息
+                                </a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="javascript:void(0);" id="logoutBtn">
+                                    <i class="fas fa-sign-out-alt me-2"></i>退出登录
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 侧边栏 -->
+    <nav class="sidebar">
+        <div class="sidebar-sticky">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link active" th:href="@{/admin}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>仪表盘</span>
+                    </a>
+                </li>
+                <li class="nav-item submenu">
+                    <a class="nav-link" href="javascript:void(0);">
+                        <i class="fas fa-users"></i>
+                        <span>用户管理</span>
+                    </a>
+                    <ul class="nav flex-column submenu-items">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/users}">
+                                <i class="fas fa-user-cog"></i>
+                                <span>用户列表</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/audits}">
+                                <i class="fas fa-user-check"></i>
+                                <span>用户审核</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item submenu">
+                    <a class="nav-link" href="javascript:void(0);">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>权限管理</span>
+                    </a>
+                    <ul class="nav flex-column submenu-items">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/roles}">
+                                <i class="fas fa-user-tag"></i>
+                                <span>角色管理</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/permissions}">
+                                <i class="fas fa-key"></i>
+                                <span>权限配置</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/menus}">
+                                <i class="fas fa-bars"></i>
+                                <span>菜单管理</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/admin/logs}">
+                        <i class="fas fa-history"></i>
+                        <span>系统日志</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="toggleSidebar" href="javascript:void(0);">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>收起菜单</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="main-content">
+        <div class="container-fluid">
+            <!-- 页面标题 -->
+            <div class="page-header d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">系统仪表盘</h1>
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a th:href="@{/admin}">首页</a></li>
+                    <li class="breadcrumb-item active">仪表盘</li>
+                </ol>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="row mb-4 stats-row">
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card stats-card-primary">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title text-muted mb-1">总用户数</h6>
+                                    <h2 class="mb-0 fw-bold" id="totalUsers">0</h2>
+                                </div>
+                                <i class="fas fa-users text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card stats-card-success">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title text-muted mb-1">待审核用户</h6>
+                                    <h2 class="mb-0 fw-bold" id="pendingUsers">0</h2>
+                                </div>
+                                <i class="fas fa-user-clock text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card stats-card-warning">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title text-muted mb-1">今日登录</h6>
+                                    <h2 class="mb-0 fw-bold" id="todayLogins">0</h2>
+                                </div>
+                                <i class="fas fa-sign-in-alt text-warning"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="stats-card stats-card-danger">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title text-muted mb-1">系统日志</h6>
+                                    <h2 class="mb-0 fw-bold" id="totalLogs">0</h2>
+                                </div>
+                                <i class="fas fa-clipboard-list text-danger"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速访问 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card dashboard-card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">快速访问</h5>
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <a th:href="@{/admin/users}" class="btn btn-primary d-block">
+                                        <i class="fas fa-user-cog me-2"></i>用户管理
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <a th:href="@{/admin/audits}" class="btn btn-success d-block">
+                                        <i class="fas fa-user-check me-2"></i>用户审核
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <a th:href="@{/admin/roles}" class="btn btn-warning d-block">
+                                        <i class="fas fa-user-tag me-2"></i>角色管理
+                                    </a>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <a th:href="@{/admin/logs}" class="btn btn-danger d-block">
+                                        <i class="fas fa-history me-2"></i>系统日志
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最新数据 -->
+            <div class="row mb-4">
+                <div class="col-md-6 mb-4">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="card-title mb-0">最新注册用户</h5>
+                                <a th:href="@{/admin/users}" class="btn btn-sm btn-outline-primary">查看全部</a>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>用户名</th>
+                                            <th>邮箱</th>
+                                            <th>状态</th>
+                                            <th>注册时间</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentUsersTable">
+                                        <tr>
+                                            <td colspan="4" class="text-center py-3">
+                                                <i class="fas fa-spinner fa-spin me-2"></i>加载中...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="card-title mb-0">系统日志</h5>
+                                <a th:href="@{/admin/logs}" class="btn btn-sm btn-outline-primary">查看全部</a>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>操作用户</th>
+                                            <th>操作内容</th>
+                                            <th>IP地址</th>
+                                            <th>操作时间</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentLogsTable">
+                                        <tr>
+                                            <td colspan="4" class="text-center py-3">
+                                                <i class="fas fa-spinner fa-spin me-2"></i>加载中...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速操作表单示例 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card dashboard-card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-4">快速操作</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <form>
+                                        <div class="mb-3">
+                                            <label for="searchUser" class="form-label">用户查询</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="searchUser"
+                                                    placeholder="输入用户名或邮箱">
+                                                <button class="btn btn-primary" type="button">
+                                                    <i class="fas fa-search me-1"></i>查询
+                                                </button>
+                                            </div>
+                                            <div class="form-text">支持模糊查询，区分大小写</div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="userRole" class="form-label">用户角色</label>
+                                            <select class="form-select" id="userRole">
+                                                <option selected>选择角色</option>
+                                                <option value="1">管理员</option>
+                                                <option value="2">编辑</option>
+                                                <option value="3">普通用户</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="dateRange" class="form-label">时间范围</label>
+                                            <input type="date" class="form-control" id="dateRange">
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <form>
+                                        <div class="mb-3">
+                                            <label for="notificationMessage" class="form-label">发送通知</label>
+                                            <textarea class="form-control" id="notificationMessage" rows="4"
+                                                placeholder="输入通知内容..."></textarea>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="sendToAll">
+                                                <label class="form-check-label" for="sendToAll">发送给所有用户</label>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-grid">
+                                            <button class="btn btn-primary" type="button">
+                                                <i class="fas fa-paper-plane me-1"></i>发送通知
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- 认证工具 -->
+    <script th:src="@{/js/auth.js}"></script>
+    <!-- 管理页面直接访问处理 -->
+    <script th:src="@{/js/admin-access.js}"></script>
+    <!-- 主脚本 -->
+    <script src="/js/main.js"></script>
+    <!-- 管理页面专用脚本 -->
+    <script>
+        // 防止URL重定向，确保使用干净URL
+        (function () {
+            // 如果URL中包含with-token，强制使用干净URL
+            if (window.location.href.includes('/admin/with-token')) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const target = urlParams.get('target');
+
+                if (target) {
+                    const cleanUrl = decodeURIComponent(target);
+                    console.log('[AdminPage] 强制使用干净URL:', cleanUrl);
+                    history.replaceState(null, document.title, cleanUrl);
+                } else {
+                    history.replaceState(null, document.title, '/admin');
+                }
+            }
+        })();
+    </script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const contextPath = /*[[@{/}]]*/ '';
+
+        $(document).ready(function () {
+            // 展开/收起侧边栏
+            $('#toggleSidebar').click(function () {
+                $('body').toggleClass('sidebar-collapsed');
+                const isCollapsed = $('body').hasClass('sidebar-collapsed');
+                // 更新图标和文本
+                if (isCollapsed) {
+                    $(this).find('i').removeClass('fa-chevron-left').addClass('fa-chevron-right');
+                    $(this).find('span').text('展开菜单');
+                } else {
+                    $(this).find('i').removeClass('fa-chevron-right').addClass('fa-chevron-left');
+                    $(this).find('span').text('收起菜单');
+                }
+                // 保存状态到本地存储
+                localStorage.setItem('sidebarCollapsed', isCollapsed);
+            });
+
+            // 子菜单展开/收起
+            $('.nav-item.submenu > .nav-link').click(function () {
+                $(this).parent().toggleClass('open');
+            });
+
+            // 小屏幕侧边栏切换
+            $('#sidebarToggle').click(function () {
+                $('body').toggleClass('sidebar-collapsed');
+            });
+
+            // 加载保存的侧边栏状态
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                $('body').addClass('sidebar-collapsed');
+                $('#toggleSidebar').find('i').removeClass('fa-chevron-left').addClass('fa-chevron-right');
+                $('#toggleSidebar').find('span').text('展开菜单');
+            }
+
+            // 设置活动菜单项
+            setActiveMenu();
+
+            // 获取管理员用户名
+            if (AuthUtil.isLoggedIn()) {
+                const user = AuthUtil.getCurrentUser();
+                if (user) {
+                    $('#currentAdminUsername').text(user.nickname || user.username);
+                }
+            } else {
+                // 未登录，跳转到登录页
+                // 添加额外检查，确保只有在真正未登录时才重定向
+                const token = localStorage.getItem('jwtToken');
+                if (!token) {
+                    console.log('未检测到令牌，准备重定向到登录页');
+                    window.location.href = contextPath + 'login?redirect=' + encodeURIComponent(window.location.pathname);
+                } else {
+                    console.log('检测到令牌但AuthUtil.isLoggedIn()返回false，尝试刷新用户信息');
+                    // 尝试从服务器刷新用户信息
+                    $.ajax({
+                        url: contextPath + 'api/users/info',
+                        type: 'GET',
+                        headers: {
+                            'Authorization': 'Bearer ' + token
+                        },
+                        success: function (response) {
+                            if (response.code === 200 && response.data) {
+                                console.log('成功获取用户信息，更新本地存储');
+                                localStorage.setItem('currentUser', JSON.stringify(response.data));
+                                $('#currentAdminUsername').text(response.data.nickname || response.data.username);
+                            } else {
+                                console.log('获取用户信息失败，重定向到登录页');
+                                window.location.href = contextPath + 'login?redirect=' + encodeURIComponent(window.location.pathname);
+                            }
+                        },
+                        error: function () {
+                            console.log('API请求失败，重定向到登录页');
+                            window.location.href = contextPath + 'login?redirect=' + encodeURIComponent(window.location.pathname);
+                        }
+                    });
+                }
+            }
+
+            // 加载仪表盘数据
+            loadDashboardData();
+        });
+
+        // 设置活动菜单项
+        function setActiveMenu() {
+            const currentPath = window.location.pathname;
+            $('.sidebar .nav-link').removeClass('active');
+
+            if (currentPath.endsWith('/admin') || currentPath.endsWith('/admin/')) {
+                $('.sidebar .nav-link[href="' + contextPath + 'admin"]').addClass('active');
+            } else {
+                $('.sidebar .nav-link').each(function () {
+                    const href = $(this).attr('href');
+                    if (href && currentPath.includes(href)) {
+                        $(this).addClass('active');
+                        // 如果是子菜单，展开父菜单
+                        const parentSubmenu = $(this).parents('.submenu');
+                        if (parentSubmenu.length) {
+                            parentSubmenu.addClass('open');
+                        }
+                    }
+                });
+            }
+        }
+
+        // 加载仪表盘数据
+        function loadDashboardData() {
+            // 加载统计数据
+            $.ajax({
+                url: contextPath + 'api/admin/dashboard/stats',
+                type: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + AuthUtil.getToken()
+                },
+                success: function (response) {
+                    if (response.code === 200) {
+                        const data = response.data;
+                        $('#totalUsers').text(data.totalUsers || 0);
+                        $('#pendingUsers').text(data.pendingUsers || 0);
+                        $('#todayLogins').text(data.todayLogins || 0);
+                        $('#totalLogs').text(data.totalLogs || 0);
+                    }
+                },
+                error: function (xhr) {
+                    console.error('获取统计数据失败', xhr.status);
+                }
+            });
+
+            // 加载最新用户数据
+            $.ajax({
+                url: contextPath + 'api/admin/dashboard/recent-users',
+                type: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + AuthUtil.getToken()
+                },
+                success: function (response) {
+                    if (response.code === 200) {
+                        renderRecentUsers(response.data);
+                    }
+                },
+                error: function (xhr) {
+                    console.error('获取最新用户数据失败', xhr.status);
+                    $('#recentUsersTable').html('<tr><td colspan="4" class="text-center py-3 text-danger">加载失败</td></tr>');
+                }
+            });
+
+            // 加载最新日志数据
+            $.ajax({
+                url: contextPath + 'api/admin/dashboard/recent-logs',
+                type: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + AuthUtil.getToken()
+                },
+                success: function (response) {
+                    if (response.code === 200) {
+                        renderRecentLogs(response.data);
+                    }
+                },
+                error: function (xhr) {
+                    console.error('获取最新日志数据失败', xhr.status);
+                    $('#recentLogsTable').html('<tr><td colspan="4" class="text-center py-3 text-danger">加载失败</td></tr>');
+                }
+            });
+        }
+
+        // 渲染最新用户数据
+        function renderRecentUsers(users) {
+            if (!users || users.length === 0) {
+                $('#recentUsersTable').html('<tr><td colspan="4" class="text-center py-3">暂无数据</td></tr>');
+                return;
+            }
+
+            let html = '';
+            users.forEach(user => {
+                // 处理用户状态
+                let statusHtml = '';
+                if (user.status === 0) {
+                    statusHtml = '<span class="badge bg-warning">待审核</span>';
+                } else if (user.status === 1) {
+                    statusHtml = '<span class="badge bg-success">正常</span>';
+                } else if (user.status === 2) {
+                    statusHtml = '<span class="badge bg-danger">禁用</span>';
+                }
+
+                // 格式化时间
+                const createTime = new Date(user.createTime).toLocaleString();
+
+                html += `<tr>
+                    <td>${user.username}</td>
+                    <td>${user.email || '-'}</td>
+                    <td>${statusHtml}</td>
+                    <td>${createTime}</td>
+                </tr>`;
+            });
+
+            $('#recentUsersTable').html(html);
+        }
+
+        // 渲染最新日志数据
+        function renderRecentLogs(logs) {
+            if (!logs || logs.length === 0) {
+                $('#recentLogsTable').html('<tr><td colspan="4" class="text-center py-3">暂无数据</td></tr>');
+                return;
+            }
+
+            let html = '';
+            logs.forEach(log => {
+                // 格式化时间
+                const createTime = new Date(log.createTime).toLocaleString();
+
+                html += `<tr>
+                    <td>${log.username || '-'}</td>
+                    <td>${log.operation || '-'}</td>
+                    <td>${log.ip || '-'}</td>
+                    <td>${createTime}</td>
+                </tr>`;
+            });
+
+            $('#recentLogsTable').html(html);
+        }
+        /*]]>*/
+    </script>
+</body>
+
+</html>

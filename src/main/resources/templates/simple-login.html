@@ -14,6 +14,7 @@
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 
     <style>
+        /* 仅保留登录页特定样式，其余使用全局样式 */
         .login-container {
             max-width: 420px;
             margin: 5rem auto;
@@ -105,7 +106,9 @@
                 <div class="mb-3">
                     <label for="username" class="form-label">用户名</label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <span class="input-group-text">
+                            <i class="fas fa-user"></i>
+                        </span>
                         <input type="text" class="form-control" id="username" name="username" placeholder="请输入用户名"
                             required>
                     </div>
@@ -114,7 +117,9 @@
                 <div class="mb-3">
                     <label for="password" class="form-label">密码</label>
                     <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
                         <input type="password" class="form-control" id="password" name="password" placeholder="请输入密码"
                             required>
                     </div>
@@ -169,6 +174,8 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- 认证工具 -->
     <script th:src="@{/js/auth.js}"></script>
+    <!-- 管理页面直接访问处理 -->
+    <script th:src="@{/js/admin-access.js}"></script>
     <script th:inline="javascript">
         /*<![CDATA[*/
         // 获取应用上下文路径
@@ -280,24 +287,59 @@
                                 // 保存一个HTTP-only cookie
                                 document.cookie = "isLoggedIn=true; path=/;";
 
-                                // 发送一个XHR请求确认后端认证状态
-                                const pingRequest = new XMLHttpRequest();
-                                pingRequest.open('GET', contextPath + 'api/users/info', true);
-                                pingRequest.setRequestHeader('Authorization', 'Bearer ' + token);
-                                pingRequest.onreadystatechange = function () {
-                                    if (this.readyState === 4) {
-                                        console.log('[登录页] 认证测试响应状态:', this.status);
+                                // 如果是访问管理后台，使用特殊处理
+                                if (redirectUrl && redirectUrl.includes('/admin')) {
+                                    console.log('[登录页] 检测到管理后台页面，使用特殊处理方式访问');
+                                    // 使用fetch直接请求目标页面，带上认证头
+                                    fetch(targetUrl, {
+                                        method: 'GET',
+                                        headers: {
+                                            'Authorization': 'Bearer ' + token
+                                        }
+                                    })
+                                        .then(response => {
+                                            if (response.ok) {
+                                                return response.text();
+                                            }
+                                            throw new Error('请求失败: ' + response.status);
+                                        })
+                                        .then(html => {
+                                            // 替换当前页面内容
+                                            document.open();
+                                            document.write(html);
+                                            document.close();
 
-                                        // 无论成功与否，都跳转到目标页面
-                                        // 使用延时确保数据保存完毕
-                                        setTimeout(function () {
-                                            console.log('[登录页] 执行页面跳转...');
-                                            // 使用replace防止浏览器回退到登录页
-                                            window.location.replace(targetUrl);
-                                        }, 500);
-                                    }
-                                };
-                                pingRequest.send();
+                                            // 修正URL
+                                            history.replaceState(null, '', targetUrl);
+                                        })
+                                        .catch(error => {
+                                            console.error('[登录页] 直接访问管理后台失败:', error);
+                                            // 失败时使用传统重定向
+                                            setTimeout(function () {
+                                                window.location.replace(targetUrl);
+                                            }, 500);
+                                        });
+                                } else {
+                                    // 普通页面使用传统重定向
+                                    // 发送一个XHR请求确认后端认证状态
+                                    const pingRequest = new XMLHttpRequest();
+                                    pingRequest.open('GET', contextPath + 'api/users/info', true);
+                                    pingRequest.setRequestHeader('Authorization', 'Bearer ' + token);
+                                    pingRequest.onreadystatechange = function () {
+                                        if (this.readyState === 4) {
+                                            console.log('[登录页] 认证测试响应状态:', this.status);
+
+                                            // 无论成功与否，都跳转到目标页面
+                                            // 使用延时确保数据保存完毕
+                                            setTimeout(function () {
+                                                console.log('[登录页] 执行页面跳转...');
+                                                // 使用replace防止浏览器回退到登录页
+                                                window.location.replace(targetUrl);
+                                            }, 500);
+                                        }
+                                    };
+                                    pingRequest.send();
+                                }
                             } catch (e) {
                                 console.error('[登录页] 保存用户数据出错:', e);
                                 $('#error-message').text('登录成功但保存用户信息失败: ' + e.message);

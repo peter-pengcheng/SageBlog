@@ -381,4 +381,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         return false;
     }
+
+    @Override
+    public List<User> getRecentUsers(int limit) {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByDesc(User::getCreateTime)
+                .last("LIMIT " + limit);
+        return list(queryWrapper);
+    }
+
+    @Override
+    public long countByStatus(int status) {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getStatus, status);
+        return count(queryWrapper);
+    }
+
+    @Override
+    public long countLoginsBetween(LocalDateTime start, LocalDateTime end) {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.isNotNull(User::getLastLoginTime)
+                .between(User::getLastLoginTime, start, end);
+        return count(queryWrapper);
+    }
 }

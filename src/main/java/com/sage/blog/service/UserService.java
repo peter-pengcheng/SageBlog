@@ -6,6 +6,7 @@ import com.sage.blog.entity.User;
 import com.sage.blog.model.ProfileUpdateDto;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface UserService extends IService<User> {
@@ -152,4 +153,29 @@ public interface UserService extends IService<User> {
      * @return 是否重置成功
      */
     boolean resetPassword(String token, String newPassword);
+
+    /**
+     * 获取最近注册的用户
+     *
+     * @param limit 限制数量
+     * @return 用户列表
+     */
+    List<User> getRecentUsers(int limit);
+
+    /**
+     * 统计指定状态的用户数量
+     *
+     * @param status 用户状态
+     * @return 用户数量
+     */
+    long countByStatus(int status);
+
+    /**
+     * 统计指定时间段内登录的用户数量
+     *
+     * @param start 开始时间
+     * @param end   结束时间
+     * @return 登录数量
+     */
+    long countLoginsBetween(LocalDateTime start, LocalDateTime end);
 }
